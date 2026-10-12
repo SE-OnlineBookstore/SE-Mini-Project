@@ -13,14 +13,20 @@ A multi-seller e-commerce platform for buying and selling books, built on the ME
 
 | Document | Files |
 |---|---|
-| Software Requirements Specification v1.1 | `SRS_Document.pdf`, `SRS_Document.docx` |
-| Software Architecture and Design Specification v1.0 | `SAD_Document.pdf`, `SAD_Document.docx` |
-| Software Test Plan v1.0 (32 functional and non-functional test cases + 10 security test cases) | `Test_Plan_Document.pdf`, `Test_Plan_Document.docx` |
+| Software Requirements Specification v1.1 | `SRS_Document.pdf` |
+| Software Architecture and Design Specification v1.0 | `SAD_pdf.pdf`, `SAD_doc.docx` |
+| Software Test Plan v1.0 (32 functional and non-functional test cases + 10 security test cases) | `Test_Plan_pdf.pdf`, `Test_Plan_doc.docx` |
 | API contract (Sprint 1 endpoints) | `docs/api/openapi.yaml` |
-| Sprint 1 plan and full backlog | `docs/sprints/SPRINT_1_PLAN.md`, `docs/sprints/product_backlog_jira.csv` |
+| Product backlog and sprint plan (GitHub Project) | `docs/sprints/BACKLOG.md`, `docs/sprints/create_backlog.sh` |
 | Manual test cases | `docs/testing/manual-cases.md` |
 
-The sprint itself is run on Jira (backlog imported from `docs/sprints/product_backlog_jira.csv`).
+The backlog lives in the GitHub Project linked to this repository: one issue per requirement (FR-01 to FR-24, NFR-01 to NFR-08) with story points, owner and sprint. `docs/sprints/create_backlog.sh` creates it; `docs/sprints/BACKLOG.md` lists it.
+
+| Sprint | Dates |
+|---|---|
+| Dry run | 12-16 Oct 2026 |
+| Sprint 1 | 19-23 Oct 2026 |
+| Sprint 2 | 26-30 Oct 2026 |
 
 ## Running locally
 
@@ -77,9 +83,9 @@ Each run uses a throwaway database name. Test names start with the Test Plan IDs
 ## Repository layout
 
 ```text
-SRS_Document.pdf / .docx        Software Requirements Specification
-SAD_Document.pdf / .docx        Software Architecture and Design Specification
-Test_Plan_Document.pdf / .docx  Software Test Plan
+SRS_Document.pdf                Software Requirements Specification
+SAD_pdf.pdf, SAD_doc.docx       Software Architecture and Design Specification
+Test_Plan_pdf.pdf, Test_Plan_doc.docx  Software Test Plan
 server/
   app.js            API Gateway Layer: middleware order (helmet, CORS, rate limit, sanitise, routes, errors)
   config/           env validation, MongoDB connection, logger with redaction
@@ -97,7 +103,7 @@ client/
   src/pages/        Catalogue, BookDetail, Login, Register, VerifyOtp, Forgot/Reset password
 docs/
   api/              OpenAPI specification
-  sprints/          Sprint 1 plan and Jira backlog
+  sprints/          Backlog, sprint plan and the GitHub Project setup script
   testing/          Manual test cases
 ```
 
@@ -109,8 +115,8 @@ Implemented in the starter code:
 - FR-07 to FR-10 and FR-12: catalogue, search, filters, sorting, book details, related books
 - Health endpoint, error model, all 17 data models and seed data
 
-Next: cart and wishlist (FR-13, FR-14), listing creation (FR-19), staging deployment. See `docs/sprints/SPRINT_1_PLAN.md`.
+Sprint 1 and Sprint 2 items are listed in `docs/sprints/BACKLOG.md` and tracked on the GitHub Project board.
 
 ## Branching
 
-Work on `feature/<jira-id>-short-name`, open a pull request, get a review from another owner, then merge into `main`.
+Work on `feature/FR-xx-short-name`, open a pull request whose description says `Closes #<issue number>`, get a review from another owner, then merge into `main`. The issue moves to Done on the board automatically.
