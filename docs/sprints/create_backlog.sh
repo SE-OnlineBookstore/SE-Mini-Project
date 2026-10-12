@@ -1,0 +1,209 @@
+#!/usr/bin/env bash
+# =============================================================================
+# Online Bookstore - Group 2 : GitHub backlog + Project setup (Deliverable Part-2, item 1)
+#
+# Creates in one run:
+#   * labels      (FR / NFR, module, priority)
+#   * milestones  Sprint 1 (19-23 Oct 2026), Sprint 2 (26-30 Oct 2026)
+#   * 32 issues   one per requirement FR-01..FR-24 and NFR-01..NFR-08 from SRS v1.1,
+#                 each with a user story, acceptance criteria, story points and an assignee
+#   * a GitHub Project (board) linked to the repo, with fields
+#       Story Points (number), Sprint (Dry run / Sprint 1 / Sprint 2), Priority, Module
+#     and every issue added to it with those fields filled in.
+#
+# Requirements: GitHub CLI (gh) 2.40 or newer, logged in as the repo owner, with the
+# project scope:   gh auth login      then   gh auth refresh -s project
+# Run it from Git Bash (Windows), Terminal (macOS) or any Linux shell:
+#   bash create_backlog.sh
+# Safe to re-run: existing labels, milestones and issues (matched by "[FR-01]" etc. in the
+# title) are reused, not duplicated.
+# =============================================================================
+set -uo pipefail
+
+# ----------------------------------------------------------------------------- settings
+OWNER="deep-1005"                         # account that owns the repo and the project
+REPO="deep-1005/SE-Mini-Project"          # the mini-project repository
+PROJECT_TITLE="Online Bookstore - Group 2 Backlog"
+
+# GitHub usernames of the four members. Each must be a collaborator on the repo
+# (Settings -> Collaborators) or GitHub will refuse to assign issues to them.
+GH_KOUSHIK="Koushik283"
+GH_DEEPTHA="deep-1005"
+GH_PRAMOD="ghpramod"
+GH_HARDHICK="hardhickmgowda"
+
+SPRINT_DRY="Dry run (12-16 Oct)"
+SPRINT_1="Sprint 1 (19-23 Oct)"
+SPRINT_2="Sprint 2 (26-30 Oct)"
+# ----------------------------------------------------------------------------- end settings
+
+GH="${GH_BIN:-gh}"
+
+die() { echo "ERROR: $*" >&2; exit 1; }
+info() { echo "==> $*"; }
+
+command -v "$GH" >/dev/null 2>&1 || die "GitHub CLI 'gh' not found. Install it from https://cli.github.com and run 'gh auth login'."
+"$GH" auth status >/dev/null 2>&1 || die "Not logged in. Run: gh auth login   and then   gh auth refresh -s project"
+for u in "$GH_KOUSHIK" "$GH_PRAMOD"; do
+  case "$u" in REPLACE_WITH_*) die "Fill in the GitHub usernames at the top of this script (GH_KOUSHIK / GH_PRAMOD).";; esac
+done
+
+member_login() {
+  case "$1" in
+    Koushik)  echo "$GH_KOUSHIK" ;;
+    Deeptha)  echo "$GH_DEEPTHA" ;;
+    Pramod)   echo "$GH_PRAMOD" ;;
+    Hardhick) echo "$GH_HARDHICK" ;;
+  esac
+}
+member_name() {
+  case "$1" in
+    Koushik)  echo "Chenchu Sreekrishna Koushik (PES1UG24CS128)" ;;
+    Deeptha)  echo "Deeptha S (PES1UG24CS144)" ;;
+    Pramod)   echo "G H Pramod (PES1UG24CS162)" ;;
+    Hardhick) echo "Hardhick M Gowda (PES1UG24CS179)" ;;
+  esac
+}
+
+# ----------------------------------------------------------------------------- backlog
+# ID | Type | Module | Priority | Points | Owner | Sprint(1/2) | Title | User story | Requirement (SRS v1.1) | Acceptance criteria
+read -r -d '' BACKLOG <<'EOF'
+FR-01|FR|Accounts|High|3|Koushik|1|Buyer and seller registration|As a visitor, I want to register as a Buyer or a Seller so that I can buy or sell books.|The system shall allow a visitor to register as a Buyer or a Seller, capturing name, e-mail, phone and password, with all validation repeated server-side.|Duplicate e-mail is refused with 409; weak password or 9-digit phone is refused with 400; TC-A-01 passes.
+FR-02|FR|Accounts|High|3|Koushik|1|E-mail OTP verification|As a new user, I want to verify my e-mail with a one-time code so that my account is activated securely.|The system shall e-mail a six-digit OTP on registration and activate the account only when that OTP is entered within ten minutes.|Correct OTP activates the account; 3 wrong attempts invalidate the code; at most 3 resends per hour; TC-A-02 passes.
+FR-03|FR|Accounts|High|5|Koushik|1|Login, logout and silent token refresh|As a registered user, I want to log in and stay signed in safely so that I do not have to log in on every page.|The system shall authenticate a verified user against a bcrypt hash and issue a 15-minute JWT access token and a 7-day refresh token.|Valid login returns tokens and role; refresh token rotates on use; logout revokes it; 5 failed logins in 15 min are rate-limited; TC-A-03 passes.
+FR-04|FR|Accounts|Medium|3|Koushik|2|Password recovery|As a user who forgot my password, I want a reset link so that I can get back into my account.|The system shall provide password recovery through a single-use link valid for thirty minutes and invalidate all refresh tokens once the password is changed.|Same message whether or not the e-mail exists; link works once within 30 min; all sessions revoked after reset; TC-A-04 passes.
+FR-05|FR|Accounts|Medium|3|Koushik|2|Profile and address book|As a buyer, I want to manage my profile and delivery addresses so that checkout is quick.|The system shall allow a signed-in user to view and edit their profile and to add, edit and delete delivery addresses, exactly one of which is marked default.|Exactly one default address at all times; PIN code must be 6 digits; another user's address returns 404; TC-A-05 passes.
+FR-06|FR|Accounts|High|2|Koushik|1|Role-based access control|As the platform, I want every protected route to admit only its declared roles so that users cannot reach functions they are not allowed to use.|The system shall enforce role-based access control on every protected route and refuse all other roles with HTTP 403.|Buyer calling a seller route gets 403 and an ACCESS_DENIED audit entry; blocked accounts cannot log in; TC-A-06 passes.
+FR-07|FR|Catalogue|High|3|Deeptha|1|Paged catalogue|As a visitor, I want to browse the catalogue page by page so that I can see what is available.|The system shall present the catalogue with server-side pagination of twenty titles per page, showing cover, title, author, lowest active price and average rating.|20 titles per page with correct total; lowest active price shown; TC-C-01 passes.
+FR-08|FR|Catalogue|High|5|Deeptha|1|Keyword search|As a visitor, I want to search by title, author, ISBN or publisher so that I can find a specific book quickly.|The system shall support keyword search across title, author, ISBN-13 and publisher using a compound text index, ranked by text score.|Results ranked by relevance; no-match shows a message and the nearest category; TC-C-02 passes.
+FR-09|FR|Catalogue|High|5|Deeptha|1|Filters and sorting|As a buyer, I want to filter by category, price, condition, language and rating and sort the results so that I can narrow down my choice.|The system shall allow results to be filtered by category, price range, condition, language and minimum rating in any combination and sorted by price, rating or recency.|Filters combine correctly; lowest matching offer used for price sort; min price above max price returns 400; TC-C-03 passes.
+FR-10|FR|Catalogue|High|3|Deeptha|1|Book detail with all seller offers|As a buyer, I want to see every seller's offer for a book so that I can compare price and condition.|The system shall present a book detail page with full metadata and every ACTIVE listing ordered by price ascending, with condition, seller name and stock.|Only ACTIVE offers listed, cheapest first; unknown book returns 404 BOOK_NOT_FOUND; TC-C-04 passes.
+FR-11|FR|Catalogue|Medium|3|Deeptha|2|Verified-purchase reviews|As a buyer who received a book, I want to rate and review it so that other buyers can decide.|The system shall accept a 1-5 rating and optional comment of up to 1000 characters only from a buyer with a DELIVERED order line, one review per order line.|Review refused unless the order line is DELIVERED; second review on the same line refused; average rating updated; TC-C-05 passes.
+FR-12|FR|Catalogue|Low|2|Deeptha|2|Related titles|As a buyer, I want to see related books on a detail page so that I can discover similar titles.|The system shall display up to six related titles, same author first and then same category, excluding the current title and titles with no active listing.|At most 6 titles; current title never shown; titles without active offers excluded; TC-C-06 passes.
+FR-13|FR|Orders|High|3|Pramod|1|Shopping cart|As a buyer, I want to add books to a cart and change quantities so that I can buy several books at once.|The system shall allow a buyer to add a listing to the cart, change the quantity between 1 and 10 subject to stock, and remove a line.|Quantity capped at 10 and at available stock; cart persists across sessions; TC-O-01 passes.
+FR-14|FR|Orders|Medium|2|Pramod|1|Wishlist|As a buyer, I want to save books to a wishlist and move them to the cart later so that I do not lose track of them.|The system shall allow a buyer to save a listing to a wishlist and move it into the cart in one action, removing it from the wishlist on success.|Move-to-cart adds the line and removes the wishlist item in one step; TC-O-02 passes.
+FR-15|FR|Orders|High|5|Pramod|1|Checkout with address and coupon|As a buyer, I want to check out with my address and an optional coupon so that I know exactly what I will pay.|The system shall revalidate every cart line against current price and stock, require a delivery address, accept an optional coupon and show item total, shipping, discount and payable amount.|Price or stock changes are flagged before payment; expired coupon refused; totals correct in paise; TC-O-03 passes.
+FR-16|FR|Orders|High|8|Pramod|1|Online payment (sandbox)|As a buyer, I want to pay online so that my order is confirmed immediately.|The system shall create a payment intent for the payable amount, confirm the order only on a signature-verified success callback, and allow at most three attempts per order.|Order confirmed only after a verified webhook; forged webhook rejected; failed payment leaves order PLACED; TC-O-04 passes.
+FR-17|FR|Orders|Medium|3|Pramod|2|PDF invoice|As a buyer, I want a PDF invoice for my order so that I have a record of the purchase.|The system shall generate a PDF invoice on confirmation with order number, buyer and delivery details, every line with unit price and total, and a tax summary; downloadable and e-mailed.|Invoice downloadable from the order page and e-mailed; figures match the order; TC-O-05 passes.
+FR-18|FR|Orders|Medium|5|Pramod|2|Order tracking, cancel and return|As a buyer, I want to track my order and cancel or return it so that I stay in control after paying.|The system shall show the order lifecycle with timestamps and tracking number, accept cancellation until dispatch and a return request within seven days of delivery.|Cancel allowed only before SHIPPED; return allowed only within 7 days of DELIVERED; stock restored on cancel; TC-O-06 passes.
+FR-19|FR|Seller-Admin|High|5|Hardhick|1|Create listing from ISBN|As a seller, I want to list a book by entering its ISBN so that the details fill in automatically.|The system shall allow a seller to create a listing against an ISBN-13, auto-filling catalogue metadata where the title exists, and capture condition, price, MRP and stock.|Valid ISBN auto-fills title and author; invalid ISBN refused with ISBN_INVALID; TC-S-01 passes.
+FR-20|FR|Seller-Admin|High|3|Hardhick|1|Stock and price management|As a seller, I want to update stock and price so that my listings stay accurate.|The system shall allow a seller to update stock and price on an active listing, refuse a price above MRP, raise a low-stock alert at five units or fewer and set OUT_OF_STOCK at zero.|Price above MRP refused; alert at 5 units or fewer; status becomes OUT_OF_STOCK at 0; TC-S-02 passes.
+FR-21|FR|Seller-Admin|High|5|Hardhick|1|Order fulfilment and dispatch|As a seller, I want to accept, pack and dispatch orders with a tracking number so that buyers get their books.|The system shall allow a seller to accept an order line, mark it packed and record courier and tracking number on dispatch, notifying the buyer at each step.|Shipment record created on dispatch; buyer notified at each transition; out-of-order transitions refused; TC-S-03 passes.
+FR-22|FR|Seller-Admin|Medium|3|Hardhick|2|Seller sales dashboard|As a seller, I want a dashboard of my sales and settlement so that I know what I have earned.|The system shall present a seller dashboard with units sold, gross revenue, returns, commission and net settlement for a chosen date range, with the orders listed beneath.|Totals match the listed orders for the chosen range; TC-S-04 passes.
+FR-23|FR|Seller-Admin|Medium|5|Hardhick|2|Admin moderation|As an administrator, I want to review and block reported listings, users and reviews so that the platform stays trustworthy.|The system shall allow an administrator to block or unblock reported listings, users and reviews, recording actor, reason and timestamp in the audit log.|Block without a reason refused; every action appears in the audit log; TC-S-05 passes.
+FR-24|FR|Seller-Admin|Low|3|Hardhick|2|Platform analytics and export|As an administrator, I want monthly platform analytics exportable to CSV and PDF so that I can report on the platform.|The system shall present orders, GMV, commission, average order value and new-user growth for a chosen month, exportable to CSV and PDF.|Figures match the seeded data; CSV and PDF exports download; TC-S-06 passes.
+NFR-01|NFR|Catalogue|High|3|Deeptha|2|Search performance (2 s at p95)|As a buyer, I want search results within two seconds so that browsing feels fast.|A catalogue search shall return results within 2 seconds at the 95th percentile under the reference load (200 concurrent users, 10,000 listings).|k6 load test at 200 users shows p95 under 2 s; repeated filters served from the 5-minute cache; TC-N-01 passes.
+NFR-02|NFR|Seller-Admin|Medium|2|Hardhick|2|Availability (99 per cent)|As a user, I want the site to be up whenever I open it so that I can rely on it.|The deployed application is reachable for at least 99 per cent of the evaluation window, evidenced by an uptime monitor polling the health endpoint every five minutes.|Staging deployed; uptime monitor polls GET /api/v1/health every 5 min; TC-N-02 passes.
+NFR-03|NFR|Accounts|High|2|Koushik|1|Password storage (bcrypt, cost 12)|As a user, I want my password stored safely so that it cannot be stolen from the database.|Passwords shall be stored only as bcrypt hashes at cost factor 12 and never logged, echoed or sent anywhere except the login and registration endpoints over TLS.|Database holds only bcrypt hashes with cost 12; no password in any log line; TC-N-03 and TC-SEC-01 pass.
+NFR-04|NFR|Orders|Medium|2|Pramod|2|Usability of checkout|As a buyer, I want a short, accessible checkout that works on my phone so that buying is easy.|Checkout is completed in at most four screens, every screen is usable at a 360 px viewport, contrast meets WCAG 2.1 AA and all controls are keyboard reachable.|Cart to confirmation in 4 screens or fewer; works at 360 px; keyboard-only run succeeds; TC-N-04 passes.
+NFR-05|NFR|Orders|High|3|Pramod|2|No overselling (atomic stock)|As a buyer and as a seller, I want stock to be exact so that a book is never sold twice.|Stock is decremented atomically at confirmation so that a listing cannot be oversold.|Two concurrent orders for the last copy: exactly one succeeds and stock never goes below 0; TC-N-05 passes.
+NFR-06|NFR|Seller-Admin|Medium|2|Hardhick|1|Code quality gate (lint + 70 per cent coverage)|As the team, we want lint and test coverage checked on every pull request so that the code stays maintainable.|ESLint passes with zero errors and service modules hold at least 70 per cent unit-test coverage, enforced on every pull request.|GitHub Actions runs lint and tests on each PR; a PR with a lint error or coverage under 70 per cent is blocked; TC-N-06 passes.
+NFR-07|NFR|Catalogue|Low|2|Deeptha|2|Cross-browser support|As a user, I want the site to work in my browser so that I can use whichever browser I like.|The client renders and functions correctly on the latest two versions of Chrome, Edge, Firefox and Safari, verified by a cross-browser regression pass.|Main flows pass in Chrome, Edge, Firefox and Safari; TC-N-07 passes.
+NFR-08|NFR|Accounts|High|3|Koushik|2|Append-only audit log|As an administrator, I want every admin action and payment event logged permanently so that every change can be traced.|Every administrative action and every payment event shall be written to an append-only audit log carrying actor, action, target and timestamp.|Audit entries cannot be edited or deleted through any API; admin and payment events all logged; TC-N-08 passes.
+EOF
+
+# ----------------------------------------------------------------------------- 1. labels
+info "Creating labels"
+mklabel() { "$GH" label create "$1" --repo "$REPO" --color "$2" --description "$3" --force >/dev/null || echo "   (label $1 not created)"; }
+mklabel "FR"                 "1d76db" "Functional requirement (SRS section 5)"
+mklabel "NFR"                "5319e7" "Non-functional requirement (SRS section 6)"
+mklabel "module:Accounts"    "c5def5" "Identity, accounts and access control"
+mklabel "module:Catalogue"   "c5def5" "Catalogue, search and reviews"
+mklabel "module:Orders"      "c5def5" "Cart, checkout, payment and orders"
+mklabel "module:Seller-Admin" "c5def5" "Seller operations, administration and reporting"
+mklabel "priority:High"      "b60205" "Must have"
+mklabel "priority:Medium"    "fbca04" "Should have"
+mklabel "priority:Low"       "0e8a16" "Could have"
+mklabel "user-story"         "ededed" "Backlog item derived from the SRS"
+
+# ----------------------------------------------------------------------------- 2. milestones (sprints)
+info "Creating milestones"
+mkmilestone() { # title due description
+  local n
+  n=$("$GH" api "repos/$REPO/milestones?state=all&per_page=100" --jq ".[] | select(.title==\"$1\") | .number" 2>/dev/null | head -n1)
+  if [ -z "$n" ]; then
+    "$GH" api "repos/$REPO/milestones" -f title="$1" -f due_on="$2" -f description="$3" >/dev/null && echo "   created: $1" || echo "   (milestone $1 not created)"
+  else
+    echo "   exists:  $1"
+  fi
+}
+mkmilestone "$SPRINT_1" "2026-10-23T18:00:00Z" "Sprint 1: 19-23 Oct 2026. Working product with accounts, catalogue, cart/checkout/payment and seller listing."
+mkmilestone "$SPRINT_2" "2026-10-30T18:00:00Z" "Sprint 2: 26-30 Oct 2026. Remaining features, NFR verification, documentation freeze."
+
+# ----------------------------------------------------------------------------- 3. project
+info "Creating / finding the Project"
+PROJECT_NUMBER=$("$GH" project list --owner "$OWNER" --format json --limit 100 --jq ".projects[] | select(.title==\"$PROJECT_TITLE\") | .number" 2>/dev/null | head -n1)
+if [ -z "$PROJECT_NUMBER" ]; then
+  PROJECT_NUMBER=$("$GH" project create --owner "$OWNER" --title "$PROJECT_TITLE" --format json --jq .number) \
+    || die "Could not create the project. Run: gh auth refresh -s project   and try again."
+  echo "   created project #$PROJECT_NUMBER"
+else
+  echo "   found project #$PROJECT_NUMBER"
+fi
+PROJECT_ID=$("$GH" project view "$PROJECT_NUMBER" --owner "$OWNER" --format json --jq .id) || die "Could not read the project id."
+"$GH" project link "$PROJECT_NUMBER" --owner "$OWNER" --repo "$REPO" >/dev/null 2>&1 && echo "   linked to $REPO" || echo "   (already linked, or link it from the repo's Projects tab)"
+
+info "Creating project fields"
+field_id() { "$GH" project field-list "$PROJECT_NUMBER" --owner "$OWNER" --format json --limit 50 --jq ".fields[] | select(.name==\"$1\") | .id" | head -n1; }
+option_id() { "$GH" project field-list "$PROJECT_NUMBER" --owner "$OWNER" --format json --limit 50 --jq ".fields[] | select(.name==\"$1\") | .options[] | select(.name==\"$2\") | .id" | head -n1; }
+ensure_field() { # name type [options]
+  if [ -z "$(field_id "$1")" ]; then
+    if [ "$2" = "SINGLE_SELECT" ]; then
+      "$GH" project field-create "$PROJECT_NUMBER" --owner "$OWNER" --name "$1" --data-type SINGLE_SELECT --single-select-options "$3" >/dev/null
+    else
+      "$GH" project field-create "$PROJECT_NUMBER" --owner "$OWNER" --name "$1" --data-type "$2" >/dev/null
+    fi
+    echo "   created field: $1"
+  else
+    echo "   field exists:  $1"
+  fi
+}
+ensure_field "Story Points" NUMBER
+ensure_field "Sprint"   SINGLE_SELECT "$SPRINT_DRY,$SPRINT_1,$SPRINT_2"
+ensure_field "Priority" SINGLE_SELECT "High,Medium,Low"
+ensure_field "Module"   SINGLE_SELECT "Accounts,Catalogue,Orders,Seller-Admin"
+
+F_POINTS=$(field_id "Story Points"); F_SPRINT=$(field_id "Sprint"); F_PRIORITY=$(field_id "Priority"); F_MODULE=$(field_id "Module")
+[ -n "$F_POINTS" ] && [ -n "$F_SPRINT" ] && [ -n "$F_PRIORITY" ] && [ -n "$F_MODULE" ] || die "Project fields missing; re-run the script."
+O_S1=$(option_id "Sprint" "$SPRINT_1"); O_S2=$(option_id "Sprint" "$SPRINT_2")
+
+# ----------------------------------------------------------------------------- 4. issues + project items
+info "Creating backlog issues"
+TOTAL_POINTS=0
+while IFS='|' read -r ID TYPE MODULE PRIO PTS OWNERKEY SPR TITLE STORY REQ ACC; do
+  [ -z "$ID" ] && continue
+  ISSUE_TITLE="[$ID] $TITLE"
+  LOGIN=$(member_login "$OWNERKEY"); NAME=$(member_name "$OWNERKEY")
+  if [ "$SPR" = "1" ]; then MILESTONE="$SPRINT_1"; SPRINT_OPT="$O_S1"; SPRINT_TXT="$SPRINT_1"; else MILESTONE="$SPRINT_2"; SPRINT_OPT="$O_S2"; SPRINT_TXT="$SPRINT_2"; fi
+  BODY=$(printf '**User story**\n%s\n\n**Requirement (SRS v1.1, %s)**\n%s\n\n**Acceptance criteria**\n%s\n\n| Field | Value |\n|---|---|\n| Type | %s |\n| Module | %s |\n| Priority | %s |\n| Story points | %s |\n| Owner | %s |\n| Sprint | %s |\n\n**Definition of done:** code merged through a reviewed pull request, tests for the acceptance criteria pass, and the RTM row is updated.\n' \
+    "$STORY" "$ID" "$REQ" "$ACC" "$TYPE" "$MODULE" "$PRIO" "$PTS" "$NAME" "$SPRINT_TXT")
+
+  URL=$("$GH" issue list --repo "$REPO" --state all --search "\"[$ID]\" in:title" --json title,url --limit 20 --jq ".[] | select(.title | startswith(\"[$ID]\")) | .url" | head -n1)
+  if [ -z "$URL" ]; then
+    URL=$("$GH" issue create --repo "$REPO" --title "$ISSUE_TITLE" --body "$BODY" \
+            --label "$TYPE" --label "module:$MODULE" --label "priority:$PRIO" --label "user-story" \
+            --assignee "$LOGIN" --milestone "$MILESTONE" 2>/dev/null | tail -n1)
+    if [ -z "$URL" ]; then
+      echo "   ! could not assign $ID to $LOGIN (not a collaborator yet?) - creating it unassigned"
+      URL=$("$GH" issue create --repo "$REPO" --title "$ISSUE_TITLE" --body "$BODY" \
+              --label "$TYPE" --label "module:$MODULE" --label "priority:$PRIO" --label "user-story" \
+              --milestone "$MILESTONE" | tail -n1)
+    fi
+    echo "   created $ID  ($PTS pts, $OWNERKEY, sprint $SPR)  $URL"
+  else
+    echo "   exists  $ID  $URL"
+  fi
+  [ -z "$URL" ] && { echo "   ! skipped $ID"; continue; }
+
+  ITEM=$("$GH" project item-add "$PROJECT_NUMBER" --owner "$OWNER" --url "$URL" --format json --jq .id)
+  "$GH" project item-edit --id "$ITEM" --project-id "$PROJECT_ID" --field-id "$F_POINTS" --number "$PTS" >/dev/null
+  "$GH" project item-edit --id "$ITEM" --project-id "$PROJECT_ID" --field-id "$F_SPRINT" --single-select-option-id "$SPRINT_OPT" >/dev/null
+  "$GH" project item-edit --id "$ITEM" --project-id "$PROJECT_ID" --field-id "$F_PRIORITY" --single-select-option-id "$(option_id Priority "$PRIO")" >/dev/null
+  "$GH" project item-edit --id "$ITEM" --project-id "$PROJECT_ID" --field-id "$F_MODULE" --single-select-option-id "$(option_id Module "$MODULE")" >/dev/null
+  TOTAL_POINTS=$((TOTAL_POINTS + PTS))
+done <<< "$BACKLOG"
+
+echo
+info "Done. $TOTAL_POINTS story points added to project #$PROJECT_NUMBER."
+echo "Open it: https://github.com/users/$OWNER/projects/$PROJECT_NUMBER"
+echo "Next: in the project, add a Board view grouped by Status and a Table view grouped by Sprint (see BACKLOG.md)."
