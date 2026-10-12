@@ -1,32 +1,26 @@
 #!/usr/bin/env bash
 # =============================================================================
 # Online Bookstore - Group 2 : GitHub backlog + Project setup (Deliverable Part-2, item 1)
+# Version 2: safe against GitHub rate limits, safe to run again and again.
 #
-# Creates in one run:
-#   * labels      (FR / NFR, module, priority)
-#   * milestones  Sprint 1 (19-23 Oct 2026), Sprint 2 (26-30 Oct 2026)
-#   * 32 issues   one per requirement FR-01..FR-24 and NFR-01..NFR-08 from SRS v1.1,
-#                 each with a user story, acceptance criteria, story points and an assignee
-#   * a GitHub Project (board) linked to the repo, with fields
-#       Story Points (number), Sprint (Dry run / Sprint 1 / Sprint 2), Priority, Module
-#     and every issue added to it with those fields filled in.
+# What it does:
+#   * labels, two sprint milestones
+#   * 32 issues (FR-01..FR-24, NFR-01..NFR-08) with labels, assignee and milestone
+#     (issues that already exist are FIXED, not duplicated)
+#   * GitHub Project #2 linked to the repo, every issue added, with
+#     Story Points, Sprint, Priority and Module filled in
 #
-# Requirements: GitHub CLI (gh) 2.40 or newer, logged in as the repo owner, with the
-# project scope:   gh auth login      then   gh auth refresh -s project
-# Run it from Git Bash (Windows), Terminal (macOS) or any Linux shell:
-#   bash create_backlog.sh
-# Safe to re-run: existing labels, milestones and issues (matched by "[FR-01]" etc. in the
-# title) are reused, not duplicated.
+# Needs: GitHub CLI (gh) logged in as deep-1005 with the project scope:
+#        gh auth refresh -s project
+# Run from Git Bash:   bash docs/sprints/create_backlog.sh
 # =============================================================================
 set -uo pipefail
 
 # ----------------------------------------------------------------------------- settings
-OWNER="deep-1005"                         # account that owns the repo and the project
-REPO="deep-1005/SE-Mini-Project"          # the mini-project repository
+OWNER="deep-1005"
+REPO="deep-1005/SE-Mini-Project"
 PROJECT_TITLE="Online Bookstore - Group 2 Backlog"
 
-# GitHub usernames of the four members. Each must be a collaborator on the repo
-# (Settings -> Collaborators) or GitHub will refuse to assign issues to them.
 GH_KOUSHIK="Koushik283"
 GH_DEEPTHA="deep-1005"
 GH_PRAMOD="ghpramod"
@@ -38,15 +32,47 @@ SPRINT_2="Sprint 2 (26-30 Oct)"
 # ----------------------------------------------------------------------------- end settings
 
 GH="${GH_BIN:-gh}"
+ERRF="$(mktemp 2>/dev/null || echo /tmp/backlog_err.$$)"
+FAILED=""
 
-die() { echo "ERROR: $*" >&2; exit 1; }
+die()  { echo "ERROR: $*" >&2; exit 1; }
 info() { echo "==> $*"; }
 
-command -v "$GH" >/dev/null 2>&1 || die "GitHub CLI 'gh' not found. Install it from https://cli.github.com and run 'gh auth login'."
-"$GH" auth status >/dev/null 2>&1 || die "Not logged in. Run: gh auth login   and then   gh auth refresh -s project"
-for u in "$GH_KOUSHIK" "$GH_PRAMOD"; do
-  case "$u" in REPLACE_WITH_*) die "Fill in the GitHub usernames at the top of this script (GH_KOUSHIK / GH_PRAMOD).";; esac
-done
+command -v "$GH" >/dev/null 2>&1 || die "GitHub CLI 'gh' not found."
+"$GH" auth status >/dev/null 2>&1 || die "Not logged in. Run: gh auth login   then   gh auth refresh -s project"
+
+# Wait here if GitHub's GraphQL budget is almost used up (this check itself is free).
+wait_for_budget() {
+  local rem reset now
+  rem=$("$GH" api rate_limit --jq '.resources.graphql.remaining' 2>/dev/null | tr -d '\r')
+  reset=$("$GH" api rate_limit --jq '.resources.graphql.reset' 2>/dev/null | tr -d '\r')
+  case "$rem" in ''|*[!0-9]*) return 0;; esac
+  if [ "$rem" -lt 300 ]; then
+    now=$(date +%s); local w=$(( reset - now + 10 ))
+    [ "$w" -lt 10 ] && w=10
+    echo "   GitHub allows only $rem more calls right now. Waiting $(( w / 60 + 1 )) minute(s) for the limit to reset..."
+    sleep "$w"
+  else
+    echo "   GitHub budget OK ($rem calls left)."
+  fi
+}
+
+# Run a gh command; if GitHub says "rate limit", wait and try again (up to 6 times).
+run() {
+  local out rc n=0
+  while :; do
+    out=$("$@" 2>"$ERRF"); rc=$?
+    if [ $rc -eq 0 ]; then printf '%s' "$out" | tr -d '\r'; return 0; fi
+    if grep -qiE "rate limit|abuse|secondary" "$ERRF"; then
+      n=$((n + 1))
+      if [ $n -gt 6 ]; then cat "$ERRF" >&2; return 1; fi
+      echo "   ...rate limit hit, waiting 5 minutes (try $n of 6)" >&2
+      sleep 300
+    else
+      cat "$ERRF" >&2; return $rc
+    fi
+  done
+}
 
 member_login() {
   case "$1" in
@@ -67,7 +93,7 @@ member_name() {
 
 # ----------------------------------------------------------------------------- backlog
 # ID | Type | Module | Priority | Points | Owner | Sprint(1/2) | Title | User story | Requirement (SRS v1.1) | Acceptance criteria
-read -r -d '' BACKLOG <<'EOF'
+read -r -d '' BACKLOG <<'BACKLOG_EOF'
 FR-01|FR|Accounts|High|3|Koushik|1|Buyer and seller registration|As a visitor, I want to register as a Buyer or a Seller so that I can buy or sell books.|The system shall allow a visitor to register as a Buyer or a Seller, capturing name, e-mail, phone and password, with all validation repeated server-side.|Duplicate e-mail is refused with 409; weak password or 9-digit phone is refused with 400; TC-A-01 passes.
 FR-02|FR|Accounts|High|3|Koushik|1|E-mail OTP verification|As a new user, I want to verify my e-mail with a one-time code so that my account is activated securely.|The system shall e-mail a six-digit OTP on registration and activate the account only when that OTP is entered within ten minutes.|Correct OTP activates the account; 3 wrong attempts invalidate the code; at most 3 resends per hour; TC-A-02 passes.
 FR-03|FR|Accounts|High|5|Koushik|1|Login, logout and silent token refresh|As a registered user, I want to log in and stay signed in safely so that I do not have to log in on every page.|The system shall authenticate a verified user against a bcrypt hash and issue a 15-minute JWT access token and a 7-day refresh token.|Valid login returns tokens and role; refresh token rotates on use; logout revokes it; 5 failed logins in 15 min are rate-limited; TC-A-03 passes.
@@ -100,110 +126,139 @@ NFR-05|NFR|Orders|High|3|Pramod|2|No overselling (atomic stock)|As a buyer and a
 NFR-06|NFR|Seller-Admin|Medium|2|Hardhick|1|Code quality gate (lint + 70 per cent coverage)|As the team, we want lint and test coverage checked on every pull request so that the code stays maintainable.|ESLint passes with zero errors and service modules hold at least 70 per cent unit-test coverage, enforced on every pull request.|GitHub Actions runs lint and tests on each PR; a PR with a lint error or coverage under 70 per cent is blocked; TC-N-06 passes.
 NFR-07|NFR|Catalogue|Low|2|Deeptha|2|Cross-browser support|As a user, I want the site to work in my browser so that I can use whichever browser I like.|The client renders and functions correctly on the latest two versions of Chrome, Edge, Firefox and Safari, verified by a cross-browser regression pass.|Main flows pass in Chrome, Edge, Firefox and Safari; TC-N-07 passes.
 NFR-08|NFR|Accounts|High|3|Koushik|2|Append-only audit log|As an administrator, I want every admin action and payment event logged permanently so that every change can be traced.|Every administrative action and every payment event shall be written to an append-only audit log carrying actor, action, target and timestamp.|Audit entries cannot be edited or deleted through any API; admin and payment events all logged; TC-N-08 passes.
-EOF
+BACKLOG_EOF
+
+# ----------------------------------------------------------------------------- 0. budget
+info "Checking GitHub rate limit"
+wait_for_budget
 
 # ----------------------------------------------------------------------------- 1. labels
 info "Creating labels"
-mklabel() { "$GH" label create "$1" --repo "$REPO" --color "$2" --description "$3" --force >/dev/null || echo "   (label $1 not created)"; }
-mklabel "FR"                 "1d76db" "Functional requirement (SRS section 5)"
-mklabel "NFR"                "5319e7" "Non-functional requirement (SRS section 6)"
-mklabel "module:Accounts"    "c5def5" "Identity, accounts and access control"
-mklabel "module:Catalogue"   "c5def5" "Catalogue, search and reviews"
-mklabel "module:Orders"      "c5def5" "Cart, checkout, payment and orders"
+mklabel() { run "$GH" label create "$1" --repo "$REPO" --color "$2" --description "$3" --force >/dev/null || echo "   (label $1 not created)"; }
+mklabel "FR"                  "1d76db" "Functional requirement (SRS section 5)"
+mklabel "NFR"                 "5319e7" "Non-functional requirement (SRS section 6)"
+mklabel "module:Accounts"     "c5def5" "Identity, accounts and access control"
+mklabel "module:Catalogue"    "c5def5" "Catalogue, search and reviews"
+mklabel "module:Orders"       "c5def5" "Cart, checkout, payment and orders"
 mklabel "module:Seller-Admin" "c5def5" "Seller operations, administration and reporting"
-mklabel "priority:High"      "b60205" "Must have"
-mklabel "priority:Medium"    "fbca04" "Should have"
-mklabel "priority:Low"       "0e8a16" "Could have"
-mklabel "user-story"         "ededed" "Backlog item derived from the SRS"
+mklabel "priority:High"       "b60205" "Must have"
+mklabel "priority:Medium"     "fbca04" "Should have"
+mklabel "priority:Low"        "0e8a16" "Could have"
+mklabel "user-story"          "ededed" "Backlog item derived from the SRS"
 
 # ----------------------------------------------------------------------------- 2. milestones (sprints)
 info "Creating milestones"
+milestone_number() { run "$GH" api "repos/$REPO/milestones?state=all&per_page=100" --jq ".[] | select(.title==\"$1\") | .number" | head -n1; }
 mkmilestone() { # title due description
-  local n
-  n=$("$GH" api "repos/$REPO/milestones?state=all&per_page=100" --jq ".[] | select(.title==\"$1\") | .number" 2>/dev/null | head -n1)
+  local n; n=$(milestone_number "$1")
   if [ -z "$n" ]; then
-    "$GH" api "repos/$REPO/milestones" -f title="$1" -f due_on="$2" -f description="$3" >/dev/null && echo "   created: $1" || echo "   (milestone $1 not created)"
+    run "$GH" api "repos/$REPO/milestones" -f title="$1" -f due_on="$2" -f description="$3" >/dev/null && echo "   created: $1" || echo "   (milestone $1 not created)"
   else
     echo "   exists:  $1"
   fi
 }
 mkmilestone "$SPRINT_1" "2026-10-23T18:00:00Z" "Sprint 1: 19-23 Oct 2026. Working product with accounts, catalogue, cart/checkout/payment and seller listing."
 mkmilestone "$SPRINT_2" "2026-10-30T18:00:00Z" "Sprint 2: 26-30 Oct 2026. Remaining features, NFR verification, documentation freeze."
+MS1=$(milestone_number "$SPRINT_1"); MS2=$(milestone_number "$SPRINT_2")
+[ -n "$MS1" ] && [ -n "$MS2" ] || die "Milestones missing. Run the script again."
 
 # ----------------------------------------------------------------------------- 3. project
-info "Creating / finding the Project"
-PROJECT_NUMBER=$("$GH" project list --owner "$OWNER" --format json --limit 100 --jq ".projects[] | select(.title==\"$PROJECT_TITLE\") | .number" 2>/dev/null | head -n1)
+info "Finding the Project"
+PROJECT_NUMBER=$(run "$GH" project list --owner "$OWNER" --format json --limit 100 --jq ".projects[] | select(.title==\"$PROJECT_TITLE\") | .number" | head -n1)
 if [ -z "$PROJECT_NUMBER" ]; then
-  PROJECT_NUMBER=$("$GH" project create --owner "$OWNER" --title "$PROJECT_TITLE" --format json --jq .number) \
+  PROJECT_NUMBER=$(run "$GH" project create --owner "$OWNER" --title "$PROJECT_TITLE" --format json --jq .number) \
     || die "Could not create the project. Run: gh auth refresh -s project   and try again."
   echo "   created project #$PROJECT_NUMBER"
 else
   echo "   found project #$PROJECT_NUMBER"
 fi
-PROJECT_ID=$("$GH" project view "$PROJECT_NUMBER" --owner "$OWNER" --format json --jq .id) || die "Could not read the project id."
-"$GH" project link "$PROJECT_NUMBER" --owner "$OWNER" --repo "$REPO" >/dev/null 2>&1 && echo "   linked to $REPO" || echo "   (already linked, or link it from the repo's Projects tab)"
+PROJECT_ID=$(run "$GH" project view "$PROJECT_NUMBER" --owner "$OWNER" --format json --jq .id) || die "Could not read the project id."
+run "$GH" project link "$PROJECT_NUMBER" --owner "$OWNER" --repo "$REPO" >/dev/null 2>&1 && echo "   linked to $REPO" || echo "   (already linked)"
 
-info "Creating project fields"
-field_id() { "$GH" project field-list "$PROJECT_NUMBER" --owner "$OWNER" --format json --limit 50 --jq ".fields[] | select(.name==\"$1\") | .id" | head -n1; }
-option_id() { "$GH" project field-list "$PROJECT_NUMBER" --owner "$OWNER" --format json --limit 50 --jq ".fields[] | select(.name==\"$1\") | .options[] | select(.name==\"$2\") | .id" | head -n1; }
+# Read all field + option ids ONCE (lines: FieldName|OptionName|id)
+load_fields() {
+  FIELDS=$(run "$GH" project field-list "$PROJECT_NUMBER" --owner "$OWNER" --format json --limit 50 \
+    --jq '.fields[] | .name as $f | if .options then (.options[] | "\($f)|\(.name)|\(.id)") else "\($f)||\(.id)" end') || FIELDS=""
+}
+field_id()  { printf '%s\n' "$FIELDS" | awk -F'|' -v f="$1" '$1==f && $2=="" {print $3; exit}'; }
+option_id() { printf '%s\n' "$FIELDS" | awk -F'|' -v f="$1" -v o="$2" '$1==f && $2==o {print $3; exit}'; }
 ensure_field() { # name type [options]
   if [ -z "$(field_id "$1")" ]; then
     if [ "$2" = "SINGLE_SELECT" ]; then
-      "$GH" project field-create "$PROJECT_NUMBER" --owner "$OWNER" --name "$1" --data-type SINGLE_SELECT --single-select-options "$3" >/dev/null
+      run "$GH" project field-create "$PROJECT_NUMBER" --owner "$OWNER" --name "$1" --data-type SINGLE_SELECT --single-select-options "$3" >/dev/null
     else
-      "$GH" project field-create "$PROJECT_NUMBER" --owner "$OWNER" --name "$1" --data-type "$2" >/dev/null
+      run "$GH" project field-create "$PROJECT_NUMBER" --owner "$OWNER" --name "$1" --data-type "$2" >/dev/null
     fi
-    echo "   created field: $1"
+    echo "   created field: $1"; load_fields
   else
     echo "   field exists:  $1"
   fi
 }
+load_fields
 ensure_field "Story Points" NUMBER
 ensure_field "Sprint"   SINGLE_SELECT "$SPRINT_DRY,$SPRINT_1,$SPRINT_2"
 ensure_field "Priority" SINGLE_SELECT "High,Medium,Low"
 ensure_field "Module"   SINGLE_SELECT "Accounts,Catalogue,Orders,Seller-Admin"
 
 F_POINTS=$(field_id "Story Points"); F_SPRINT=$(field_id "Sprint"); F_PRIORITY=$(field_id "Priority"); F_MODULE=$(field_id "Module")
-[ -n "$F_POINTS" ] && [ -n "$F_SPRINT" ] && [ -n "$F_PRIORITY" ] && [ -n "$F_MODULE" ] || die "Project fields missing; re-run the script."
+[ -n "$F_POINTS" ] && [ -n "$F_SPRINT" ] && [ -n "$F_PRIORITY" ] && [ -n "$F_MODULE" ] || die "Project fields missing; run the script again."
 O_S1=$(option_id "Sprint" "$SPRINT_1"); O_S2=$(option_id "Sprint" "$SPRINT_2")
 
 # ----------------------------------------------------------------------------- 4. issues + project items
-info "Creating backlog issues"
-TOTAL_POINTS=0
+info "Reading existing issues (one call)"
+EXISTING=$(run "$GH" api "repos/$REPO/issues?state=all&per_page=100" --paginate \
+  --jq '.[] | select(.pull_request|not) | "\(.number)|\(.html_url)|\(.title)"') || EXISTING=""
+
+info "Creating / fixing the 32 backlog issues and adding them to the Project"
+TOTAL_POINTS=0; DONE_ITEMS=0
 while IFS='|' read -r ID TYPE MODULE PRIO PTS OWNERKEY SPR TITLE STORY REQ ACC; do
-  [ -z "$ID" ] && continue
+  ID=$(printf '%s' "$ID" | tr -d '\r\n'); [ -z "$ID" ] && continue
+  ACC=$(printf '%s' "$ACC" | tr -d '\r')
   ISSUE_TITLE="[$ID] $TITLE"
   LOGIN=$(member_login "$OWNERKEY"); NAME=$(member_name "$OWNERKEY")
-  if [ "$SPR" = "1" ]; then MILESTONE="$SPRINT_1"; SPRINT_OPT="$O_S1"; SPRINT_TXT="$SPRINT_1"; else MILESTONE="$SPRINT_2"; SPRINT_OPT="$O_S2"; SPRINT_TXT="$SPRINT_2"; fi
+  if [ "$SPR" = "1" ]; then MS="$MS1"; SPRINT_OPT="$O_S1"; SPRINT_TXT="$SPRINT_1"; else MS="$MS2"; SPRINT_OPT="$O_S2"; SPRINT_TXT="$SPRINT_2"; fi
   BODY=$(printf '**User story**\n%s\n\n**Requirement (SRS v1.1, %s)**\n%s\n\n**Acceptance criteria**\n%s\n\n| Field | Value |\n|---|---|\n| Type | %s |\n| Module | %s |\n| Priority | %s |\n| Story points | %s |\n| Owner | %s |\n| Sprint | %s |\n\n**Definition of done:** code merged through a reviewed pull request, tests for the acceptance criteria pass, and the RTM row is updated.\n' \
     "$STORY" "$ID" "$REQ" "$ACC" "$TYPE" "$MODULE" "$PRIO" "$PTS" "$NAME" "$SPRINT_TXT")
 
-  URL=$("$GH" issue list --repo "$REPO" --state all --search "\"[$ID]\" in:title" --json title,url --limit 20 --jq ".[] | select(.title | startswith(\"[$ID]\")) | .url" | head -n1)
-  if [ -z "$URL" ]; then
-    URL=$("$GH" issue create --repo "$REPO" --title "$ISSUE_TITLE" --body "$BODY" \
-            --label "$TYPE" --label "module:$MODULE" --label "priority:$PRIO" --label "user-story" \
-            --assignee "$LOGIN" --milestone "$MILESTONE" 2>/dev/null | tail -n1)
-    if [ -z "$URL" ]; then
-      echo "   ! could not assign $ID to $LOGIN (not a collaborator yet?) - creating it unassigned"
-      URL=$("$GH" issue create --repo "$REPO" --title "$ISSUE_TITLE" --body "$BODY" \
-              --label "$TYPE" --label "module:$MODULE" --label "priority:$PRIO" --label "user-story" \
-              --milestone "$MILESTONE" | tail -n1)
-    fi
-    echo "   created $ID  ($PTS pts, $OWNERKEY, sprint $SPR)  $URL"
+  LINE=$(printf '%s\n' "$EXISTING" | grep -F "|[$ID] " | head -n1)
+  if [ -n "$LINE" ]; then
+    NUM=${LINE%%|*}; REST=${LINE#*|}; URL=${REST%%|*}
+    run "$GH" api -X PATCH "repos/$REPO/issues/$NUM" \
+      -f title="$ISSUE_TITLE" -f body="$BODY" -F milestone="$MS" \
+      -f "labels[]=$TYPE" -f "labels[]=module:$MODULE" -f "labels[]=priority:$PRIO" -f "labels[]=user-story" \
+      -f "assignees[]=$LOGIN" >/dev/null && echo "   fixed   $ID -> $LOGIN  $URL" || { echo "   ! could not update $ID"; FAILED="$FAILED $ID(issue)"; continue; }
   else
-    echo "   exists  $ID  $URL"
+    RES=$(run "$GH" api -X POST "repos/$REPO/issues" \
+      -f title="$ISSUE_TITLE" -f body="$BODY" -F milestone="$MS" \
+      -f "labels[]=$TYPE" -f "labels[]=module:$MODULE" -f "labels[]=priority:$PRIO" -f "labels[]=user-story" \
+      -f "assignees[]=$LOGIN" --jq '"\(.number)|\(.html_url)"') || { echo "   ! could not create $ID"; FAILED="$FAILED $ID(issue)"; continue; }
+    URL=${RES#*|}
+    echo "   created $ID -> $LOGIN  $URL"
   fi
-  [ -z "$URL" ] && { echo "   ! skipped $ID"; continue; }
+  sleep 1
 
-  ITEM=$("$GH" project item-add "$PROJECT_NUMBER" --owner "$OWNER" --url "$URL" --format json --jq .id)
-  "$GH" project item-edit --id "$ITEM" --project-id "$PROJECT_ID" --field-id "$F_POINTS" --number "$PTS" >/dev/null
-  "$GH" project item-edit --id "$ITEM" --project-id "$PROJECT_ID" --field-id "$F_SPRINT" --single-select-option-id "$SPRINT_OPT" >/dev/null
-  "$GH" project item-edit --id "$ITEM" --project-id "$PROJECT_ID" --field-id "$F_PRIORITY" --single-select-option-id "$(option_id Priority "$PRIO")" >/dev/null
-  "$GH" project item-edit --id "$ITEM" --project-id "$PROJECT_ID" --field-id "$F_MODULE" --single-select-option-id "$(option_id Module "$MODULE")" >/dev/null
-  TOTAL_POINTS=$((TOTAL_POINTS + PTS))
+  ITEM=$(run "$GH" project item-add "$PROJECT_NUMBER" --owner "$OWNER" --url "$URL" --format json --jq .id) || ITEM=""
+  if [ -z "$ITEM" ]; then echo "   ! $ID not added to the project"; FAILED="$FAILED $ID(project)"; continue; fi
+  OK=1
+  run "$GH" project item-edit --id "$ITEM" --project-id "$PROJECT_ID" --field-id "$F_POINTS"   --number "$PTS" >/dev/null || OK=0; sleep 1
+  run "$GH" project item-edit --id "$ITEM" --project-id "$PROJECT_ID" --field-id "$F_SPRINT"   --single-select-option-id "$SPRINT_OPT" >/dev/null || OK=0; sleep 1
+  run "$GH" project item-edit --id "$ITEM" --project-id "$PROJECT_ID" --field-id "$F_PRIORITY" --single-select-option-id "$(option_id Priority "$PRIO")" >/dev/null || OK=0; sleep 1
+  run "$GH" project item-edit --id "$ITEM" --project-id "$PROJECT_ID" --field-id "$F_MODULE"   --single-select-option-id "$(option_id Module "$MODULE")" >/dev/null || OK=0; sleep 1
+  if [ "$OK" = "1" ]; then
+    TOTAL_POINTS=$((TOTAL_POINTS + PTS)); DONE_ITEMS=$((DONE_ITEMS + 1))
+  else
+    echo "   ! some fields of $ID were not set"; FAILED="$FAILED $ID(fields)"
+  fi
 done <<< "$BACKLOG"
 
+rm -f "$ERRF" 2>/dev/null
 echo
-info "Done. $TOTAL_POINTS story points added to project #$PROJECT_NUMBER."
-echo "Open it: https://github.com/users/$OWNER/projects/$PROJECT_NUMBER"
-echo "Next: in the project, add a Board view grouped by Status and a Table view grouped by Sprint (see BACKLOG.md)."
+if [ -z "$FAILED" ]; then
+  info "ALL GOOD: $DONE_ITEMS of 32 items complete, $TOTAL_POINTS story points (expected 109)."
+else
+  info "$DONE_ITEMS of 32 items complete, $TOTAL_POINTS story points (expected 109)."
+  echo "Needs another run:$FAILED"
+  echo "Just run the same command again (it only fixes what is missing)."
+fi
+echo "Open the project: https://github.com/users/$OWNER/projects/$PROJECT_NUMBER"
+echo "Issues:           https://github.com/$REPO/issues"
