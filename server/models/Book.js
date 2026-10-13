@@ -23,9 +23,16 @@ const bookSchema = new Schema(
 );
 
 // FR-08 / NFR-01: compound text index, title weighted highest.
+// default_language 'none' and language_override 'text_language' stop MongoDB from reading our
+// own "language" field (Hindi, Kannada, Tamil...) as a text-index language, which it rejects.
 bookSchema.index(
   { title: 'text', author: 'text', isbn13: 'text', publisher: 'text' },
-  { weights: { title: 10, author: 5, isbn13: 5, publisher: 1 }, name: 'book_text' },
+  {
+    weights: { title: 10, author: 5, isbn13: 5, publisher: 1 },
+    name: 'book_text',
+    default_language: 'none',
+    language_override: 'text_language',
+  },
 );
 bookSchema.index({ active_offers: 1, lowest_price: 1 });
 
