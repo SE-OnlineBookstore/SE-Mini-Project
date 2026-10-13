@@ -178,7 +178,7 @@ run "$GH" project link "$PROJECT_NUMBER" --owner "$OWNER" --repo "$REPO" >/dev/n
 # Read all field + option ids ONCE (lines: FieldName|OptionName|id)
 load_fields() {
   FIELDS=$(run "$GH" project field-list "$PROJECT_NUMBER" --owner "$OWNER" --format json --limit 50 \
-    --jq '.fields[] | .name as $f | if .options then (.options[] | "\($f)|\(.name)|\(.id)") else "\($f)||\(.id)" end') || FIELDS=""
+     --jq '.fields[] | .name as $f | ("\($f)||\(.id)"), (if .options then (.options[] | "\($f)|\(.name)|\(.id)") else empty end)') || FIELDS=""
 }
 field_id()  { printf '%s\n' "$FIELDS" | awk -F'|' -v f="$1" '$1==f && $2=="" {print $3; exit}'; }
 option_id() { printf '%s\n' "$FIELDS" | awk -F'|' -v f="$1" -v o="$2" '$1==f && $2==o {print $3; exit}'; }
