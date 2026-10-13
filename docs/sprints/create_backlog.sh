@@ -17,8 +17,8 @@
 set -uo pipefail
 
 # ----------------------------------------------------------------------------- settings
-OWNER="deep-1005"
-REPO="deep-1005/SE-Mini-Project"
+OWNER="SE-OnlineBookstore"
+REPO="SE-OnlineBookstore/SE-Mini-Project"
 PROJECT_TITLE="Online Bookstore - Group 2 Backlog"
 
 GH_KOUSHIK="Koushik283"
