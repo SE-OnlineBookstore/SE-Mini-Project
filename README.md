@@ -1,4 +1,4 @@
-# Online Bookstore - Group 2 (UE24CS341A, Section C)
+# Online Bookstore
 
 A multi-seller e-commerce platform for buying and selling books, built on the MERN stack.
 
@@ -24,7 +24,6 @@ The backlog lives in the GitHub Project linked to this repository: one issue per
 
 | Sprint | Dates |
 |---|---|
-| Dry run | 12-16 Oct 2026 |
 | Sprint 1 | 19-23 Oct 2026 |
 | Sprint 2 | 26-30 Oct 2026 |
 
