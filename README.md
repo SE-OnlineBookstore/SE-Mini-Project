@@ -4,7 +4,7 @@ A multi-seller e-commerce platform for buying and selling books, built on the ME
 
 | Member | SRN | Owns (SRS section 5) |
 |---|---|---|
-| Chenchu Sreekrishna Koushik | PES1UG24CS128 | Identity, accounts and access control (FR-01 to FR-06) |
+| Chenchu Sree krishna Koushik | PES1UG24CS128 | Identity, accounts and access control (FR-01 to FR-06) |
 | Deeptha S | PES1UG24CS144 | Catalogue, search and reviews (FR-07 to FR-12) |
 | G H Pramod | PES1UG24CS162 | Cart, checkout, payment and orders (FR-13 to FR-18) |
 | Hardhick M Gowda | PES1UG24CS179 | Seller operations, administration and reporting (FR-19 to FR-24) |
