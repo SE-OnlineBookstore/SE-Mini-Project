@@ -5,7 +5,6 @@ const Cart = require('../models/Cart');
 const CartItem = require('../models/CartItem');
 const Address = require('../models/Address');
 const Coupon = require('../models/Coupon');
-const Listing = require('../models/Listing');
 const { E } = require('../utils/AppError');
 
 const FREE_SHIPPING_THRESHOLD = 50000; // 500 rupees in paise (SRS 5.3.3 / FR-15)

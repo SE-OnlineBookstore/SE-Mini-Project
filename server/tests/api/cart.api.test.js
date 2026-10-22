@@ -4,14 +4,13 @@ const db = require('../helpers/db');
 const { makeUser, login } = require('../helpers/factory');
 const createApp = require('../../app');
 const paymentService = require('../../services/paymentService');
-const { Book, Listing, Category, Cart, CartItem, Wishlist, Order, OrderItem, Payment, Coupon, Address } = require('../../models');
+const { Book, Listing, Category, Order, Coupon, Address } = require('../../models');
 
 const app = createApp();
 
 let buyer;
 let seller;
 let buyerAuth;
-let sellerAuth;
 let category;
 
 async function createBookWithListing({ title = 'Atomic Habits', price = 40000, stock = 10, sellerUser = seller }) {
@@ -47,7 +46,6 @@ beforeEach(async () => {
   buyer = await makeUser('BUYER');
   seller = await makeUser('SELLER');
   buyerAuth = { Authorization: `Bearer ${(await login(app, buyer)).token}` };
-  sellerAuth = { Authorization: `Bearer ${(await login(app, seller)).token}` };
   category = await Category.create({ name: 'Self-Help', slug: `self-help-${Date.now()}` });
 });
 afterEach(db.clear);
