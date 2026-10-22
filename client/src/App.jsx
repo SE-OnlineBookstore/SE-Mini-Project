@@ -5,6 +5,7 @@ import BookDetail from './pages/BookDetail';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import VerifyOtp from './pages/VerifyOtp';
+import Cart from './pages/Cart';
 import { ForgotPassword, ResetPassword } from './pages/ForgotPassword';
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Catalogue />} />
           <Route path="/books/:id" element={<BookDetail />} />
+          <Route path="/cart" element={<Cart />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/verify" element={<VerifyOtp />} />
