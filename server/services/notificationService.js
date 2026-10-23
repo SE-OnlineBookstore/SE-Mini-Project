@@ -1,4 +1,3 @@
-
 /**
  * Notification module (SAD 3.4): records every message in NOTIFICATION
  * and delivers it through the mail adapter.
@@ -34,6 +33,17 @@ The link works once. If you did not ask for this, ignore this e-mail.`,
     text: `Hi ${name},
 
 Your password was just changed and all other sessions were signed out.`,
+  }),
+
+  LOW_STOCK_ALERT: ({ name, bookTitle, stockQty }) => ({
+    subject: 'Low stock alert - Online Bookstore',
+    text: `Hi ${name},
+
+Your listing for "${bookTitle}" has low stock remaining.
+
+Current stock: ${stockQty} ${stockQty === 1 ? 'copy' : 'copies'}.
+
+Please update your stock if needed.`,
   }),
 
   ORDER_CONFIRMED: ({ name, orderNo, itemTitle }) => ({

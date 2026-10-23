@@ -1,11 +1,9 @@
-
 const router = require('express').Router();
 
 router.use(require('./health.routes'));
 router.use('/auth', require('./auth.routes'));
 router.use('/users', require('./user.routes'));
 router.use(require('./book.routes'));
-
 router.use(require('./listing.routes'));
 
 router.use('/cart', require('./cart.routes'));

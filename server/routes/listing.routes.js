@@ -1,4 +1,5 @@
 // FR-06 / Issue #19: seller listing creation.
+// Issue #20: seller listing price and stock management.
 const router = require('express').Router();
 const h = require('../utils/asyncHandler');
 const verifyJWT = require('../middleware/verifyJWT');
@@ -13,6 +14,14 @@ router.post(
   authorizeRoles('SELLER'),
   validate(schema.create),
   h(controller.create),
+);
+
+router.patch(
+  '/seller/listings/:id',
+  verifyJWT,
+  authorizeRoles('SELLER'),
+  validate(schema.update),
+  h(controller.update),
 );
 
 module.exports = router;
