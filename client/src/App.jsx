@@ -5,8 +5,11 @@ import BookDetail from './pages/BookDetail';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import VerifyOtp from './pages/VerifyOtp';
-import Cart from './pages/Cart';
 import { ForgotPassword, ResetPassword } from './pages/ForgotPassword';
+import Wishlist from './pages/Wishlist';
+import Cart from './pages/Cart';
+import Checkout from './pages/Checkout';
+import OrderDetail from './pages/OrderDetail';
 
 export default function App() {
   return (
@@ -18,6 +21,9 @@ export default function App() {
           <Route path="/" element={<Catalogue />} />
           <Route path="/books/:id" element={<BookDetail />} />
           <Route path="/cart" element={<Cart />} />
+          <Route path="/wishlist" element={<Wishlist />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/orders/:id" element={<OrderDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/verify" element={<VerifyOtp />} />

@@ -35,6 +35,29 @@ components:
     Tokens:
       type: object
       properties: { accessToken: { type: string }, expiresIn: { type: integer, example: 900 }, user: { $ref: '#/components/schemas/User' } }
+    WishlistItem:
+      type: object
+      properties:
+        id: { type: string }
+        listingId: { type: string }
+        addedAt: { type: string, format: date-time }
+        book:
+          type: object
+          properties:
+            id: { type: string }
+            title: { type: string }
+            author: { type: string }
+            isbn13: { type: string }
+            coverUrl: { type: string, nullable: true }
+            mrp: { type: integer, description: paise }
+        listing:
+          type: object
+          properties:
+            condition: { type: string }
+            price: { type: integer, description: paise }
+            stockQty: { type: integer }
+            inStock: { type: boolean }
+            seller: { type: object, properties: { id: { type: string }, name: { type: string } } }
   responses:
     Error: { description: Error, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
 paths:
@@ -98,3 +121,137 @@ paths:
     get: { security: [{ bearer: [] }], summary: ISBN lookup for listing creation (SELLER, ADMIN), parameters: [{ name: isbn13, in: path, required: true, schema: { type: string } }], responses: { '200': { description: book }, '400': { $ref: '#/components/responses/Error' }, '403': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' } } }
   /categories:
     get: { summary: All categories, responses: { '200': { description: list } } }
+  /wishlist:
+    get:
+      security: [{ bearer: [] }]
+      summary: List saved wishlist items for the logged-in buyer (FR-14)
+      responses:
+        '200':
+          description: list of wishlist items
+          content: { application/json: { schema: { type: object, properties: { items: { type: array, items: { $ref: '#/components/schemas/WishlistItem' } }, total: { type: integer } } } } }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+    post:
+      security: [{ bearer: [] }]
+      summary: Add a listing to wishlist (FR-14)
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [listingId], properties: { listingId: { type: string } } } } }
+      responses:
+        '201': { description: saved to wishlist }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /wishlist/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+    delete:
+      security: [{ bearer: [] }]
+      summary: Remove an item from wishlist (FR-14)
+      responses:
+        '204': { description: removed }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /wishlist/{id}/move-to-cart:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+    post:
+      security: [{ bearer: [] }]
+      summary: Move wishlist item to cart in a single atomic action (FR-14, TC-O-02)
+      responses:
+        '200': { description: moved to cart }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /wishlist/check/{listingId}:
+    parameters: [{ name: listingId, in: path, required: true, schema: { type: string } }]
+    get:
+      security: [{ bearer: [] }]
+      summary: Check if listing is in buyer's wishlist
+      responses:
+        '200':
+          description: presence status
+          content: { application/json: { schema: { type: object, properties: { inWishlist: { type: boolean } } } } }
+        '401': { $ref: '#/components/responses/Error' }
+  /checkout/preview:
+    get:
+      security: [{ bearer: [] }]
+      summary: Revalidate cart lines, preview address, coupon and payable total (FR-15)
+      parameters:
+        - { name: addressId, in: query, schema: { type: string } }
+        - { name: couponCode, in: query, schema: { type: string } }
+      responses:
+        '200': { description: checkout preview with revalidation results }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+  /checkout:
+    post:
+      security: [{ bearer: [] }]
+      summary: Prepare order and place checkout (FR-15, TC-O-03)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [addressId]
+              properties:
+                addressId: { type: string }
+                couponCode: { type: string }
+      responses:
+        '201': { description: order created with status PLACED }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /checkout/validate-coupon:
+    post:
+      security: [{ bearer: [] }]
+      summary: Validate a coupon code against current cart (FR-15)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: { type: string }
+      responses:
+        '200': { description: coupon discount breakdown }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /orders:
+    get:
+      security: [{ bearer: [] }]
+      summary: List order history for buyer
+      responses:
+        '200': { description: list of orders }
+        '401': { $ref: '#/components/responses/Error' }
+    post:
+      security: [{ bearer: [] }]
+      summary: Place order from cart (alias for /checkout)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [addressId]
+              properties:
+                addressId: { type: string }
+                couponCode: { type: string }
+      responses:
+        '201': { description: order created }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+  /orders/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+    get:
+      security: [{ bearer: [] }]
+      summary: Get order details by ID
+      responses:
+        '200': { description: order and lines }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+
+

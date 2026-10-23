@@ -23,6 +23,7 @@ export default function Header() {
         {user ? (
           <>
             {user.role === 'BUYER' && <Link to="/cart">Cart</Link>}
+            {user.role === 'BUYER' && <Link to="/wishlist">Wishlist</Link>}
             <span className="muted">{user.name} ({user.role.toLowerCase()})</span>
             <button type="button" className="link" onClick={logout}>Sign out</button>
           </>

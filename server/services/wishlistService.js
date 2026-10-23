@@ -1,101 +1,191 @@
-// Wishlist business logic (FR-14). Single-action move-to-cart.
+// Wishlist Service (FR-14; SRS 5.3.3; TC-O-02).
+// Enables buyers to save books for later and atomically move them into the shopping cart.
+const mongoose = require('mongoose');
 const Wishlist = require('../models/Wishlist');
 const Listing = require('../models/Listing');
+const Cart = require('../models/Cart');
+const CartItem = require('../models/CartItem');
 const cartService = require('./cartService');
 const { E } = require('../utils/AppError');
+
+const { ObjectId } = mongoose.Types;
+
+function formatWishlistItem(item) {
+  const listing = item.listing_id;
+  const book = listing?.book_id;
+
+  return {
+    id: String(item._id),
+    listingId: String(listing?._id || item.listing_id),
+    addedAt: item.added_at,
+    book: book ? {
+      id: String(book._id),
+      title: book.title,
+      author: book.author,
+      isbn13: book.isbn13,
+      coverUrl: book.cover_url || null,
+      mrp: book.mrp,
+      language: book.language,
+      publisher: book.publisher,
+    } : null,
+    listing: listing ? {
+      id: String(listing._id),
+      condition: listing.condition,
+      price: listing.price,
+      stockQty: listing.stock_qty,
+      status: listing.status,
+      inStock: listing.status === 'ACTIVE' && listing.stock_qty > 0,
+      seller: listing.seller_id ? {
+        id: String(listing.seller_id._id),
+        name: listing.seller_id.name,
+      } : null,
+    } : null,
+  };
+}
 
 async function getWishlist(buyerId) {
   const items = await Wishlist.find({ buyer_id: buyerId })
     .populate({
       path: 'listing_id',
-      populate: { path: 'book_id', select: 'title author coverUrl isbn13 mrp' },
+      populate: [
+        { path: 'book_id', select: 'title author isbn13 cover_url mrp language publisher' },
+        { path: 'seller_id', select: 'name' },
+      ],
     })
     .sort({ added_at: -1 });
 
-  const formattedItems = [];
-  for (const item of items) {
-    const listing = item.listing_id;
-    if (!listing) continue;
-
-    const book = listing.book_id;
-    formattedItems.push({
-      id: String(item._id),
-      listingId: String(listing._id),
-      addedAt: item.added_at,
-      price: listing.price,
-      condition: listing.condition,
-      inStock: listing.stock_qty > 0 && listing.status === 'ACTIVE',
-      availableStock: listing.stock_qty,
-      book: book
-        ? {
-            id: String(book._id),
-            title: book.title,
-            author: book.author,
-            coverUrl: book.coverUrl,
-            isbn13: book.isbn13,
-            mrp: book.mrp,
-          }
-        : null,
-    });
-  }
-
-  return { items: formattedItems, count: formattedItems.length };
+  const formatted = items.map(formatWishlistItem);
+  return {
+    items: formatted,
+    total: formatted.length,
+    count: formatted.length,
+  };
 }
 
-async function addItem(buyerId, { listingId }) {
-  const listing = await Listing.findById(listingId);
-  if (!listing) {
-    throw E.notFound('LISTING_NOT_FOUND', 'Listing not found.');
+async function addToWishlist(buyerId, listingId) {
+  if (!ObjectId.isValid(listingId)) {
+    throw E.badRequest('INVALID_ID', 'Invalid listing ID.');
   }
+
+  const listing = await Listing.findById(listingId);
+  if (!listing) throw E.notFound('LISTING_NOT_FOUND', 'Listing not found.');
 
   if (String(listing.seller_id) === String(buyerId)) {
     throw E.badRequest('CANNOT_BUY_OWN_LISTING', 'Sellers cannot add their own listings to wishlist.');
   }
 
-  let item = await Wishlist.findOne({ buyer_id: buyerId, listing_id: listingId });
-  if (item) {
-    return { item: { id: String(item._id), listingId: String(listingId) }, alreadyInWishlist: true };
-  }
+  const item = await Wishlist.findOneAndUpdate(
+    { buyer_id: buyerId, listing_id: listingId },
+    { $setOnInsert: { buyer_id: buyerId, listing_id: listingId, added_at: new Date() } },
+    { upsert: true, new: true, setDefaultsOnInsert: true },
+  );
 
-  item = await Wishlist.create({ buyer_id: buyerId, listing_id: listingId });
-  return { item: { id: String(item._id), listingId: String(listingId) }, alreadyInWishlist: false };
-}
-
-async function removeItem(buyerId, itemId) {
-  const item = await Wishlist.findOne({
-    buyer_id: buyerId,
-    $or: [{ _id: itemId.match(/^[0-9a-fA-F]{24}$/) ? itemId : null }, { listing_id: itemId.match(/^[0-9a-fA-F]{24}$/) ? itemId : null }],
+  const populated = await Wishlist.findById(item._id).populate({
+    path: 'listing_id',
+    populate: [
+      { path: 'book_id', select: 'title author isbn13 cover_url mrp language publisher' },
+      { path: 'seller_id', select: 'name' },
+    ],
   });
 
-  if (!item) {
-    throw E.notFound('WISHLIST_ITEM_NOT_FOUND', 'Item not found in wishlist.');
-  }
-
-  await item.deleteOne();
+  return { item: formatWishlistItem(populated) };
 }
 
-async function moveToCart(buyerId, itemId) {
-  const item = await Wishlist.findOne({
-    buyer_id: buyerId,
-    $or: [{ _id: itemId.match(/^[0-9a-fA-F]{24}$/) ? itemId : null }, { listing_id: itemId.match(/^[0-9a-fA-F]{24}$/) ? itemId : null }],
-  });
-
-  if (!item) {
-    throw E.notFound('WISHLIST_ITEM_NOT_FOUND', 'Item not found in wishlist.');
+async function removeFromWishlist(buyerId, idOrListingId) {
+  if (!ObjectId.isValid(idOrListingId)) {
+    throw E.badRequest('INVALID_ID', 'Invalid ID.');
   }
 
-  // 1. Add to cart
-  const cart = await cartService.addItem(buyerId, { listingId: item.listing_id, quantity: 1 });
+  const query = {
+    buyer_id: buyerId,
+    $or: [{ _id: idOrListingId }, { listing_id: idOrListingId }],
+  };
 
-  // 2. Remove from wishlist on success (FR-14 single action)
-  await item.deleteOne();
+  const item = await Wishlist.findOne(query);
+  if (!item) {
+    throw E.notFound('WISHLIST_ITEM_NOT_FOUND', 'Item not in wishlist.');
+  }
 
-  return cart;
+  await Wishlist.deleteOne({ _id: item._id });
+}
+
+async function moveToCart(buyerId, idOrListingId) {
+  if (!ObjectId.isValid(idOrListingId)) {
+    throw E.badRequest('INVALID_ID', 'Invalid ID.');
+  }
+
+  const query = {
+    buyer_id: buyerId,
+    $or: [{ _id: idOrListingId }, { listing_id: idOrListingId }],
+  };
+
+  const item = await Wishlist.findOne(query).populate('listing_id');
+  if (!item) {
+    throw E.notFound('WISHLIST_ITEM_NOT_FOUND', 'Wishlist item not found.');
+  }
+
+  const listing = item.listing_id;
+  if (!listing) throw E.notFound('LISTING_NOT_FOUND', 'Listing not found.');
+  if (listing.status === 'OUT_OF_STOCK' || listing.stock_qty <= 0) {
+    throw E.badRequest('OUT_OF_STOCK', 'This item is currently out of stock.');
+  }
+  if (listing.status !== 'ACTIVE') {
+    throw E.badRequest('LISTING_NOT_ACTIVE', 'This listing is no longer active.');
+  }
+  if (String(listing.seller_id) === String(buyerId)) {
+    throw E.badRequest('SELF_PURCHASE', 'A buyer cannot purchase their own listing.');
+  }
+
+  // Add to cart with current price and quantity 1
+  let cart = await Cart.findOne({ buyer_id: buyerId });
+  if (!cart) {
+    cart = await Cart.create({ buyer_id: buyerId });
+  }
+
+  let cartItem = await CartItem.findOne({ cart_id: cart._id, listing_id: listing._id });
+  if (cartItem) {
+    const desired = cartItem.quantity + 1;
+    const maxAllowed = Math.min(10, listing.stock_qty);
+    cartItem.quantity = Math.min(desired, maxAllowed);
+    cartItem.price_at_add = listing.price;
+    await cartItem.save();
+  } else {
+    cartItem = await CartItem.create({
+      cart_id: cart._id,
+      listing_id: listing._id,
+      quantity: 1,
+      price_at_add: listing.price,
+    });
+  }
+
+  // Remove from wishlist on success (FR-14: move in a single action)
+  await Wishlist.deleteOne({ _id: item._id });
+
+  const cartData = await cartService.getCart(buyerId);
+
+  return {
+    message: 'Item moved to cart successfully.',
+    listingId: String(listing._id),
+    cartId: String(cart._id),
+    ...cartData,
+  };
+}
+
+async function checkInWishlist(buyerId, listingId) {
+  if (!ObjectId.isValid(listingId)) {
+    throw E.badRequest('INVALID_ID', 'Invalid listing ID.');
+  }
+
+  const exists = await Wishlist.exists({ buyer_id: buyerId, listing_id: listingId });
+  return { inWishlist: Boolean(exists) };
 }
 
 module.exports = {
   getWishlist,
-  addItem,
-  removeItem,
+  addToWishlist,
+  addItem: async (buyerId, data) => addToWishlist(buyerId, data.listingId || data),
+  removeFromWishlist,
+  removeItem: removeFromWishlist,
   moveToCart,
+  checkInWishlist,
 };
