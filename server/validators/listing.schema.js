@@ -10,4 +10,14 @@ module.exports = {
       stock_qty: Joi.number().integer().min(0).required(),
     }),
   },
+
+  update: {
+    params: Joi.object({
+      id: Joi.string().hex().length(24).required(),
+    }),
+    body: Joi.object({
+      price: Joi.number().integer().min(1),
+      stock_qty: Joi.number().integer().min(0),
+    }).min(1).required(),
+  },
 };
