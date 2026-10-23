@@ -3,7 +3,7 @@ const request = require('supertest');
 const db = require('../helpers/db');
 const { makeUser, login } = require('../helpers/factory');
 const createApp = require('../../app');
-const { Book, Listing, Category, Address, Coupon, CartItem } = require('../../models');
+const { Book, Listing, Category, Address, Coupon, Cart, CartItem } = require('../../models');
 
 const app = createApp();
 
@@ -120,6 +120,23 @@ async function setupData() {
   });
 }
 
+async function addItemToBuyerCart(listing, quantity = 1) {
+  let cart = await Cart.findOne({ buyer_id: buyer._id });
+  if (!cart) cart = await Cart.create({ buyer_id: buyer._id });
+  let item = await CartItem.findOne({ cart_id: cart._id, listing_id: listing._id });
+  if (item) {
+    item.quantity += quantity;
+    await item.save();
+    return item;
+  }
+  return CartItem.create({
+    cart_id: cart._id,
+    listing_id: listing._id,
+    quantity,
+    price_at_add: listing.price,
+  });
+}
+
 beforeAll(db.start);
 beforeEach(async () => {
   buyer = await makeUser('BUYER');
@@ -142,7 +159,7 @@ describe('TC-O-03 checkout with address and coupon (FR-15)', () => {
 
   it('calculates flat shipping fee when item total is below ₹500 (BR-04)', async () => {
     // Add 1 item of ₹300 (30,000 paise)
-    await request(app).post('/api/v1/cart/items').set(buyerAuth).send({ listingId: String(listing1._id), quantity: 1 });
+    await addItemToBuyerCart(listing1, 1);
 
     const preview = await request(app)
       .get('/api/v1/checkout/preview')
@@ -158,7 +175,7 @@ describe('TC-O-03 checkout with address and coupon (FR-15)', () => {
 
   it('waives shipping fee when item total reaches ₹500 or more (BR-04)', async () => {
     // Add 2 items of ₹300 = ₹600 (60,000 paise)
-    await request(app).post('/api/v1/cart/items').set(buyerAuth).send({ listingId: String(listing1._id), quantity: 2 });
+    await addItemToBuyerCart(listing1, 2);
 
     const preview = await request(app)
       .get('/api/v1/checkout/preview')
@@ -172,7 +189,7 @@ describe('TC-O-03 checkout with address and coupon (FR-15)', () => {
   });
 
   it('applies a FLAT coupon correctly', async () => {
-    await request(app).post('/api/v1/cart/items').set(buyerAuth).send({ listingId: String(listing1._id), quantity: 1 });
+    await addItemToBuyerCart(listing1, 1);
 
     const preview = await request(app)
       .get('/api/v1/checkout/preview')
@@ -188,7 +205,7 @@ describe('TC-O-03 checkout with address and coupon (FR-15)', () => {
 
   it('applies a PERCENT coupon correctly', async () => {
     // 2 x ₹300 = ₹600 (60,000 paise), 10% discount = ₹60 (6,000 paise)
-    await request(app).post('/api/v1/cart/items').set(buyerAuth).send({ listingId: String(listing1._id), quantity: 2 });
+    await addItemToBuyerCart(listing1, 2);
 
     const preview = await request(app)
       .get('/api/v1/checkout/preview')
@@ -203,7 +220,7 @@ describe('TC-O-03 checkout with address and coupon (FR-15)', () => {
   });
 
   it('refuses an expired coupon code', async () => {
-    await request(app).post('/api/v1/cart/items').set(buyerAuth).send({ listingId: String(listing1._id), quantity: 1 });
+    await addItemToBuyerCart(listing1, 1);
 
     const res = await request(app)
       .post('/api/v1/checkout')
@@ -215,7 +232,7 @@ describe('TC-O-03 checkout with address and coupon (FR-15)', () => {
   });
 
   it('refuses a coupon when minimum order requirement is not met', async () => {
-    await request(app).post('/api/v1/cart/items').set(buyerAuth).send({ listingId: String(listing1._id), quantity: 1 });
+    await addItemToBuyerCart(listing1, 1);
 
     const res = await request(app)
       .post('/api/v1/checkout')
@@ -227,7 +244,7 @@ describe('TC-O-03 checkout with address and coupon (FR-15)', () => {
   });
 
   it('flags price changes in preview and applies current price', async () => {
-    await request(app).post('/api/v1/cart/items').set(buyerAuth).send({ listingId: String(listing1._id), quantity: 1 });
+    await addItemToBuyerCart(listing1, 1);
 
     // Price changes from 30000 to 35000
     await Listing.updateOne({ _id: listing1._id }, { $set: { price: 35000 } });
@@ -244,7 +261,7 @@ describe('TC-O-03 checkout with address and coupon (FR-15)', () => {
   });
 
   it('refuses checkout if stock is insufficient', async () => {
-    await request(app).post('/api/v1/cart/items').set(buyerAuth).send({ listingId: String(listing1._id), quantity: 3 });
+    await addItemToBuyerCart(listing1, 3);
 
     // Stock falls to 1
     await Listing.updateOne({ _id: listing1._id }, { $set: { stock_qty: 1 } });
@@ -270,9 +287,10 @@ describe('TC-O-03 checkout with address and coupon (FR-15)', () => {
     });
 
     // Directly insert into cart
-    const cartRes = await request(app).get('/api/v1/cart').set(buyerAuth);
+    let cart = await Cart.findOne({ buyer_id: buyer._id });
+    if (!cart) cart = await Cart.create({ buyer_id: buyer._id });
     await CartItem.create({
-      cart_id: cartRes.body.cartId,
+      cart_id: cart._id,
       listing_id: sellerListing._id,
       quantity: 1,
       price_at_add: 25000,
@@ -288,7 +306,7 @@ describe('TC-O-03 checkout with address and coupon (FR-15)', () => {
   });
 
   it('successfully places an order, creates order items, clears the cart, and increments coupon count', async () => {
-    await request(app).post('/api/v1/cart/items').set(buyerAuth).send({ listingId: String(listing1._id), quantity: 2 });
+    await addItemToBuyerCart(listing1, 2);
 
     const res = await request(app)
       .post('/api/v1/checkout')
@@ -307,8 +325,9 @@ describe('TC-O-03 checkout with address and coupon (FR-15)', () => {
     expect(res.body.items[0].unitPrice).toBe(30000);
 
     // Cart is now cleared
-    const cartRes = await request(app).get('/api/v1/cart').set(buyerAuth);
-    expect(cartRes.body.items).toHaveLength(0);
+    const cart = await Cart.findOne({ buyer_id: buyer._id });
+    const remainingItems = await CartItem.find({ cart_id: cart._id });
+    expect(remainingItems).toHaveLength(0);
 
     // Coupon used_count incremented
     const updatedCoupon = await Coupon.findOne({ code: 'FLAT50' });
@@ -330,7 +349,7 @@ describe('TC-O-03 checkout with address and coupon (FR-15)', () => {
       pincode: '110001',
     });
 
-    await request(app).post('/api/v1/cart/items').set(buyerAuth).send({ listingId: String(listing1._id), quantity: 1 });
+    await addItemToBuyerCart(listing1, 1);
 
     const res = await request(app)
       .post('/api/v1/checkout')
