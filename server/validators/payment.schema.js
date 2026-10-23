@@ -17,4 +17,17 @@ module.exports = {
       method: Joi.string().allow('', null),
     }).unknown(true),
   },
+  simulate: {
+    body: Joi.object({
+      paymentId: objectId,
+      orderId: objectId,
+      status: Joi.string().valid('SUCCESS', 'FAILED').default('SUCCESS'),
+      method: Joi.string().valid('UPI', 'CARD', 'NETBANKING', 'WALLET').default('UPI'),
+    }).or('paymentId', 'orderId'),
+  },
+  orderId: {
+    params: Joi.object({
+      orderId: objectId.required(),
+    }),
+  },
 };

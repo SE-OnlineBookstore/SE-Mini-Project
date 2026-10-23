@@ -7,4 +7,6 @@ module.exports = {
     const result = await paymentService.handleWebhook(req.body, signature);
     res.json(result);
   },
+  simulate: async (req, res) => res.json(await paymentService.simulateSandboxPayment(req.user.id, req.body)),
+  getStatus: async (req, res) => res.json(await paymentService.getPaymentStatus(req.user.id, req.params.orderId)),
 };

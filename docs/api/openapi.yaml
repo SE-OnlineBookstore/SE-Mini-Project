@@ -253,5 +253,78 @@ paths:
         '200': { description: order and lines }
         '401': { $ref: '#/components/responses/Error' }
         '404': { $ref: '#/components/responses/Error' }
+  /payments/intent:
+    post:
+      security: [{ bearer: [] }]
+      summary: Create payment intent for order (FR-16)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [orderId]
+              properties:
+                orderId: { type: string }
+      responses:
+        '201': { description: payment intent created }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /payments/webhook:
+    post:
+      summary: Signature-verified gateway payment webhook (FR-16)
+      parameters:
+        - name: x-signature
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gatewayOrderId, txnRef, status]
+              properties:
+                gatewayOrderId: { type: string }
+                txnRef: { type: string }
+                status: { type: string, enum: [SUCCESS, FAILED] }
+                amount: { type: integer }
+                method: { type: string }
+      responses:
+        '200': { description: payment processed }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /payments/simulate:
+    post:
+      security: [{ bearer: [] }]
+      summary: Simulate sandbox payment for testing without real money (FR-16)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                orderId: { type: string }
+                paymentId: { type: string }
+                status: { type: string, enum: [SUCCESS, FAILED] }
+                method: { type: string, enum: [UPI, CARD, NETBANKING, WALLET] }
+      responses:
+        '200': { description: simulation processed }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /payments/order/{orderId}:
+    parameters: [{ name: orderId, in: path, required: true, schema: { type: string } }]
+    get:
+      security: [{ bearer: [] }]
+      summary: Get payment attempts and status for an order
+      responses:
+        '200': { description: payment attempts breakdown }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+
 
 

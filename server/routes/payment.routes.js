@@ -13,4 +13,10 @@ router.post('/intent', verifyJWT, authorizeRoles('BUYER'), validate(s.intent), h
 // Gateway webhook (signature checked in service)
 router.post('/webhook', validate(s.webhook), h(c.webhook));
 
+// Sandbox payment simulation endpoint (for testing without real money)
+router.post('/simulate', verifyJWT, authorizeRoles('BUYER'), validate(s.simulate), h(c.simulate));
+
+// Get payment attempts & status for an order
+router.get('/order/:orderId', verifyJWT, authorizeRoles('BUYER'), validate(s.orderId), h(c.getStatus));
+
 module.exports = router;

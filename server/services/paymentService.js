@@ -130,7 +130,7 @@ async function handleWebhook(payload, signature, secret = DEFAULT_SECRET) {
       }
     }
 
-    return { status: 'ok', orderStatus: 'CONFIRMED', orderNo: order.order_no };
+    return { status: 'ok', orderStatus: 'CONFIRMED', orderNo: order.order_no, paymentStatus: 'SUCCESS', txnRef };
   }
 
   // FAILED handling: order remains PLACED, stock not decremented
@@ -151,7 +151,73 @@ async function handleWebhook(payload, signature, secret = DEFAULT_SECRET) {
     // Audit failure ignored
   }
 
-  return { status: 'ok', orderStatus: order.order_status, orderNo: order.order_no, paymentStatus: 'FAILED' };
+  return { status: 'ok', orderStatus: order.order_status, orderNo: order.order_no, paymentStatus: 'FAILED', txnRef };
+}
+
+async function simulateSandboxPayment(userId, { paymentId, orderId, status = 'SUCCESS', method = 'UPI' } = {}) {
+  let payment;
+  if (paymentId) {
+    payment = await Payment.findById(paymentId);
+  } else if (orderId) {
+    payment = await Payment.findOne({ order_id: orderId, payment_status: 'CREATED' });
+    if (!payment) {
+      const intent = await createPaymentIntent(userId, { orderId });
+      payment = await Payment.findById(intent.paymentId);
+    }
+  }
+
+  if (!payment) {
+    throw E.notFound('PAYMENT_NOT_FOUND', 'Payment intent not found.');
+  }
+
+  const order = await Order.findOne({ _id: payment.order_id, buyer_id: userId });
+  if (!order) {
+    throw E.notFound('ORDER_NOT_FOUND', 'Order not found.');
+  }
+
+  const txnRef = `sbx_txn_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+  const payload = {
+    gatewayOrderId: payment.gateway_order_id,
+    txnRef,
+    status,
+    amount: payment.amount,
+    method,
+  };
+  const signature = computeSignature(payload);
+  const result = await handleWebhook(payload, signature);
+  return { ...result, txnRef, gatewayOrderId: payment.gateway_order_id, method };
+}
+
+async function getPaymentStatus(userId, orderId) {
+  const order = await Order.findOne({ _id: orderId, buyer_id: userId });
+  if (!order) {
+    throw E.notFound('ORDER_NOT_FOUND', 'Order not found.');
+  }
+
+  const attempts = await Payment.find({ order_id: order._id }).sort({ attempt_no: 1 });
+  const attemptsCount = attempts.length;
+  const canPay = order.order_status === 'PLACED' && attemptsCount < 3;
+
+  return {
+    orderId: String(order._id),
+    orderNo: order.order_no,
+    orderStatus: order.order_status,
+    totalAmount: order.total_amount,
+    attemptsCount,
+    maxAttempts: 3,
+    remainingAttempts: Math.max(0, 3 - attemptsCount),
+    canPay,
+    attempts: attempts.map((p) => ({
+      id: String(p._id),
+      gatewayOrderId: p.gateway_order_id,
+      txnRef: p.gateway_txn_ref || null,
+      amount: p.amount,
+      attemptNo: p.attempt_no,
+      method: p.method || null,
+      status: p.payment_status,
+      createdAt: p.created_at,
+    })),
+  };
 }
 
 module.exports = {
@@ -159,5 +225,7 @@ module.exports = {
   handleWebhook,
   computeSignature,
   verifySignature,
+  simulateSandboxPayment,
+  getPaymentStatus,
   DEFAULT_SECRET,
 };
