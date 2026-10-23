@@ -274,6 +274,15 @@ async function checkout(buyerId, { addressId, couponCode }) {
     await Coupon.updateOne({ _id: coupon._id }, { $inc: { used_count: 1 } });
   }
 
+    const formattedItems = orderItems.map((oi) => ({
+    id: String(oi._id),
+    listingId: String(oi.listing_id),
+    title: oi.title,
+    quantity: oi.quantity,
+    unitPrice: oi.unit_price,
+    itemStatus: oi.item_status,
+  }));
+
   return {
     order: {
       id: String(order._id),
@@ -286,15 +295,9 @@ async function checkout(buyerId, { addressId, couponCode }) {
       createdAt: order.created_at,
       address: address.toPublic(),
       coupon: coupon ? { code: coupon.code, discount } : null,
+      items: formattedItems,
     },
-    items: orderItems.map((oi) => ({
-      id: String(oi._id),
-      listingId: String(oi.listing_id),
-      title: oi.title,
-      quantity: oi.quantity,
-      unitPrice: oi.unit_price,
-      itemStatus: oi.item_status,
-    })),
+    items: formattedItems,
   };
 }
 

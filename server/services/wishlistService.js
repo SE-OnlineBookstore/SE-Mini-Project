@@ -5,6 +5,7 @@ const Wishlist = require('../models/Wishlist');
 const Listing = require('../models/Listing');
 const Cart = require('../models/Cart');
 const CartItem = require('../models/CartItem');
+const cartService = require('./cartService');
 const { E } = require('../utils/AppError');
 
 const { ObjectId } = mongoose.Types;
@@ -57,6 +58,7 @@ async function getWishlist(buyerId) {
   return {
     items: formatted,
     total: formatted.length,
+    count: formatted.length,
   };
 }
 
@@ -67,6 +69,10 @@ async function addToWishlist(buyerId, listingId) {
 
   const listing = await Listing.findById(listingId);
   if (!listing) throw E.notFound('LISTING_NOT_FOUND', 'Listing not found.');
+
+  if (String(listing.seller_id) === String(buyerId)) {
+    throw E.badRequest('CANNOT_BUY_OWN_LISTING', 'Sellers cannot add their own listings to wishlist.');
+  }
 
   const item = await Wishlist.findOneAndUpdate(
     { buyer_id: buyerId, listing_id: listingId },
@@ -155,10 +161,13 @@ async function moveToCart(buyerId, idOrListingId) {
   // Remove from wishlist on success (FR-14: move in a single action)
   await Wishlist.deleteOne({ _id: item._id });
 
+  const cartData = await cartService.getCart(buyerId);
+
   return {
     message: 'Item moved to cart successfully.',
     listingId: String(listing._id),
     cartId: String(cart._id),
+    ...cartData,
   };
 }
 
@@ -174,7 +183,9 @@ async function checkInWishlist(buyerId, listingId) {
 module.exports = {
   getWishlist,
   addToWishlist,
+  addItem: async (buyerId, data) => addToWishlist(buyerId, data.listingId || data),
   removeFromWishlist,
+  removeItem: removeFromWishlist,
   moveToCart,
   checkInWishlist,
 };

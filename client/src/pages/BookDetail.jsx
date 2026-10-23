@@ -1,4 +1,4 @@
-// FR-10, FR-12 and FR-14: every active offer by ascending price; related titles; save to wishlist.
+// FR-10, FR-12, FR-13 and FR-14: offers by ascending price, related titles, add to cart, save to wishlist.
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -14,6 +14,7 @@ export default function BookDetail() {
   const [notice, setNotice] = useState(null);
   const [wishlistListingIds, setWishlistListingIds] = useState(new Set());
   const [busyListingId, setBusyListingId] = useState(null);
+  const [addingId, setAddingId] = useState(null);
 
   useEffect(() => {
     setData(null);
@@ -34,6 +35,32 @@ export default function BookDetail() {
       setWishlistListingIds(new Set());
     }
   }, [user]);
+
+  const handleAddToCart = async (listingId) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    if (user.role !== 'BUYER') {
+      setError('Only buyer accounts can add items to the cart.');
+      return;
+    }
+
+    setAddingId(listingId);
+    setError(null);
+    try {
+      await api.post('/cart/items', { listingId, quantity: 1 });
+      setNotice(
+        <span>
+          Added to cart! <Link to="/cart" style={{ fontWeight: 'bold' }}>View Cart &rarr;</Link>
+        </span>,
+      );
+    } catch (err) {
+      setError(readError(err).message);
+    } finally {
+      setAddingId(null);
+    }
+  };
 
   const handleSaveToWishlist = async (listingId) => {
     if (!user) {
@@ -106,6 +133,7 @@ export default function BookDetail() {
             {offers.map((o) => {
               const isSaved = wishlistListingIds.has(o.listingId);
               const isBusy = busyListingId === o.listingId;
+              const isAdding = addingId === o.listingId;
 
               return (
                 <tr key={o.listingId}>
@@ -117,11 +145,12 @@ export default function BookDetail() {
                     <div style={{ display: 'inline-flex', gap: '8px', alignItems: 'center' }}>
                       <button
                         type="button"
-                        disabled
-                        title="Cart arrives with Task 13"
+                        onClick={() => handleAddToCart(o.listingId)}
+                        disabled={!o.inStock || isAdding}
                         style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                        title={o.inStock ? 'Add to cart' : 'Out of stock'}
                       >
-                        Add to cart
+                        {isAdding ? 'Adding…' : o.inStock ? 'Add to cart' : 'Out of stock'}
                       </button>
                       <button
                         type="button"
@@ -146,11 +175,20 @@ export default function BookDetail() {
           </tbody>
         </table>
       )}
-      {related.length > 0 && (
-        <>
-          <h2>Related titles</h2>
-          <ul className="related">{related.map((r) => <li key={r.id}><Link to={`/books/${r.id}`}>{r.title}</Link> <span className="muted">{r.author}</span></li>)}</ul>
-        </>
+
+      {related && related.length > 0 && (
+        <section style={{ marginTop: '36px' }}>
+          <h2>Related Books</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px' }}>
+            {related.map((b) => (
+              <div key={b.id} style={{ border: '1px solid var(--line)', borderRadius: '6px', padding: '12px' }}>
+                <Link to={`/books/${b.id}`} style={{ fontWeight: 'bold', textDecoration: 'none' }}>{b.title}</Link>
+                <p className="muted" style={{ margin: '4px 0', fontSize: '0.9rem' }}>{b.author}</p>
+                <p style={{ margin: '4px 0', fontSize: '0.9rem' }}>MRP {rupees(b.mrp)}</p>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
     </main>
   );
