@@ -3,7 +3,7 @@ const request = require('supertest');
 const db = require('../helpers/db');
 const { makeUser, login } = require('../helpers/factory');
 const createApp = require('../../app');
-const { Book, Listing, Category, Wishlist } = require('../../models');
+const { Book, Listing, Category, Wishlist, Cart, CartItem } = require('../../models');
 
 const app = createApp();
 
@@ -158,12 +158,13 @@ describe('TC-O-02 wishlist (FR-14)', () => {
     expect(wishList.body.total).toBe(0);
 
     // Cart should now contain the item with quantity 1 and current price
-    const cartRes = await request(app).get('/api/v1/cart').set(buyerAuth);
-    expect(cartRes.status).toBe(200);
-    expect(cartRes.body.items).toHaveLength(1);
-    expect(cartRes.body.items[0].listingId).toBe(String(activeListing._id));
-    expect(cartRes.body.items[0].quantity).toBe(1);
-    expect(cartRes.body.items[0].priceAtAdd).toBe(39900);
+    const cart = await Cart.findOne({ buyer_id: buyer._id });
+    expect(cart).toBeDefined();
+    const cartItems = await CartItem.find({ cart_id: cart._id });
+    expect(cartItems).toHaveLength(1);
+    expect(String(cartItems[0].listing_id)).toBe(String(activeListing._id));
+    expect(cartItems[0].quantity).toBe(1);
+    expect(cartItems[0].price_at_add).toBe(39900);
   });
 
   it('refuses move-to-cart for an out-of-stock item and preserves the wishlist entry', async () => {
@@ -224,8 +225,14 @@ describe('TC-O-02 wishlist (FR-14)', () => {
   });
 
   it('increments quantity when moving an item already in cart', async () => {
-    // Add once to cart
-    await request(app).post('/api/v1/cart/items').set(buyerAuth).send({ listingId: String(activeListing._id) });
+    // Seed existing item in cart
+    const cart = await Cart.create({ buyer_id: buyer._id });
+    await CartItem.create({
+      cart_id: cart._id,
+      listing_id: activeListing._id,
+      quantity: 1,
+      price_at_add: activeListing.price,
+    });
 
     // Add to wishlist
     const wishRes = await request(app)
@@ -239,31 +246,7 @@ describe('TC-O-02 wishlist (FR-14)', () => {
       .set(buyerAuth);
     expect(moveRes.status).toBe(200);
 
-    const cart = await request(app).get('/api/v1/cart').set(buyerAuth);
-    expect(cart.body.items[0].quantity).toBe(2);
-  });
-
-  it('supports cart updates and removal', async () => {
-    const addRes = await request(app)
-      .post('/api/v1/cart/items')
-      .set(buyerAuth)
-      .send({ listingId: String(activeListing._id), quantity: 1 });
-    expect(addRes.status).toBe(201);
-    const cartItemId = addRes.body.items[0].id;
-
-    // Update quantity
-    const patchRes = await request(app)
-      .patch(`/api/v1/cart/items/${cartItemId}`)
-      .set(buyerAuth)
-      .send({ quantity: 3 });
-    expect(patchRes.status).toBe(200);
-    expect(patchRes.body.items[0].quantity).toBe(3);
-
-    // Remove from cart
-    const delRes = await request(app).delete(`/api/v1/cart/items/${cartItemId}`).set(buyerAuth);
-    expect(delRes.status).toBe(204);
-
-    const emptyCart = await request(app).get('/api/v1/cart').set(buyerAuth);
-    expect(emptyCart.body.items).toHaveLength(0);
+    const cartItems = await CartItem.find({ cart_id: cart._id });
+    expect(cartItems[0].quantity).toBe(2);
   });
 });

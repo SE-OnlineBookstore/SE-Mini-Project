@@ -3,7 +3,8 @@
 const mongoose = require('mongoose');
 const Wishlist = require('../models/Wishlist');
 const Listing = require('../models/Listing');
-const cartService = require('./cartService');
+const Cart = require('../models/Cart');
+const CartItem = require('../models/CartItem');
 const { E } = require('../utils/AppError');
 
 const { ObjectId } = mongoose.Types;
@@ -130,7 +131,26 @@ async function moveToCart(buyerId, idOrListingId) {
   }
 
   // Add to cart with current price and quantity 1
-  const cart = await cartService.addToCart(buyerId, listing._id, 1);
+  let cart = await Cart.findOne({ buyer_id: buyerId });
+  if (!cart) {
+    cart = await Cart.create({ buyer_id: buyerId });
+  }
+
+  let cartItem = await CartItem.findOne({ cart_id: cart._id, listing_id: listing._id });
+  if (cartItem) {
+    const desired = cartItem.quantity + 1;
+    const maxAllowed = Math.min(10, listing.stock_qty);
+    cartItem.quantity = Math.min(desired, maxAllowed);
+    cartItem.price_at_add = listing.price;
+    await cartItem.save();
+  } else {
+    cartItem = await CartItem.create({
+      cart_id: cart._id,
+      listing_id: listing._id,
+      quantity: 1,
+      price_at_add: listing.price,
+    });
+  }
 
   // Remove from wishlist on success (FR-14: move in a single action)
   await Wishlist.deleteOne({ _id: item._id });
@@ -138,7 +158,7 @@ async function moveToCart(buyerId, idOrListingId) {
   return {
     message: 'Item moved to cart successfully.',
     listingId: String(listing._id),
-    cart,
+    cartId: String(cart._id),
   };
 }
 

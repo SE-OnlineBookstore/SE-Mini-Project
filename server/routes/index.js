@@ -5,7 +5,6 @@ router.use('/auth', require('./auth.routes'));
 router.use('/users', require('./user.routes'));
 router.use(require('./book.routes'));
 router.use('/wishlist', require('./wishlist.routes'));
-router.use('/cart', require('./cart.routes'));
 router.use('/checkout', require('./checkout.routes'));
 router.use('/orders', require('./order.routes'));
 // Sprint 2: payment routes (G H Pramod); seller routes (Hardhick M Gowda).

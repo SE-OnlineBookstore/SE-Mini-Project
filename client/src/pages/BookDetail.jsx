@@ -117,21 +117,11 @@ export default function BookDetail() {
                     <div style={{ display: 'inline-flex', gap: '8px', alignItems: 'center' }}>
                       <button
                         type="button"
-                        onClick={async () => {
-                          if (!user) { navigate('/login'); return; }
-                          if (user.role !== 'BUYER') { setError('Only buyers can add items to the cart.'); return; }
-                          try {
-                            await api.post('/cart/items', { listingId: o.listingId, quantity: 1 });
-                            setNotice(<span>Added to cart! <Link to="/cart" style={{ fontWeight: 'bold' }}>View Cart &rarr;</Link></span>);
-                          } catch (e) {
-                            setError(readError(e).message);
-                          }
-                        }}
-                        disabled={!o.inStock}
+                        disabled
+                        title="Cart arrives with Task 13"
                         style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-                        title={o.inStock ? 'Add to cart' : 'Out of stock'}
                       >
-                        {o.inStock ? 'Add to cart' : 'Out of stock'}
+                        Add to cart
                       </button>
                       <button
                         type="button"
