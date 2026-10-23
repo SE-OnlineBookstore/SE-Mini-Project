@@ -9,13 +9,27 @@ module.exports = {
       couponCode: Joi.string().trim().uppercase().max(20).allow('', null),
     }),
   },
+
   createOrder: {
     body: Joi.object({
       addressId: objectId.required(),
       couponCode: Joi.string().trim().uppercase().max(20).allow('', null),
     }),
   },
+
   orderId: {
     params: Joi.object({ id: objectId.required() }),
+  },
+
+  fulfilmentItemId: {
+    params: Joi.object({ itemId: objectId.required() }),
+  },
+
+  dispatch: {
+    params: Joi.object({ itemId: objectId.required() }),
+    body: Joi.object({
+      courier: Joi.string().trim().min(1).max(60).required(),
+      trackingNo: Joi.string().trim().min(1).max(40).required(),
+    }),
   },
 };
