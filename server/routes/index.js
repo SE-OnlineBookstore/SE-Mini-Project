@@ -7,7 +7,8 @@ router.use(require('./book.routes'));
 router.use('/wishlist', require('./wishlist.routes'));
 router.use('/checkout', require('./checkout.routes'));
 router.use('/orders', require('./order.routes'));
-// Sprint 2: payment routes (G H Pramod); seller routes (Hardhick M Gowda).
+router.use('/payments', require('./payment.routes'));
+// Sprint 2: seller routes (Hardhick M Gowda).
 // Sprint 3: admin routes, reviews.
 
 module.exports = router;
