@@ -1,6 +1,9 @@
-// Notification module (SAD 3.4): records every message in NOTIFICATION
-// and delivers it through the mail adapter. Failed sends are queued for retry.
-
+/**
+ * Notification module (SAD 3.4): records every message in NOTIFICATION
+ * and delivers it through the mail adapter.
+ * A failed send never fails the user's request; the retry worker
+ * picks up FAILED rows with attempts < 3.
+ */
 const Notification = require('../models/Notification');
 const mailer = require('../adapters/mailer');
 const logger = require('../config/logger');
@@ -42,13 +45,48 @@ Current stock: ${stockQty} ${stockQty === 1 ? 'copy' : 'copies'}.
 
 Please update your stock if needed.`,
   }),
+
+  ORDER_CONFIRMED: ({ name, orderNo, itemTitle }) => ({
+    subject: `Order ${orderNo} accepted`,
+    text: `Hi ${name},
+
+Good news! The seller has accepted your order item: "${itemTitle}".
+
+Order number: ${orderNo}
+
+Thank you for shopping with Online Bookstore.`,
+  }),
+
+  ORDER_PACKED: ({ name, orderNo, itemTitle }) => ({
+    subject: `Order ${orderNo} packed`,
+    text: `Hi ${name},
+
+Your order item "${itemTitle}" has been packed and is ready for dispatch.
+
+Order number: ${orderNo}
+
+We will update you when it has been dispatched.`,
+  }),
+
+  ORDER_SHIPPED: ({ name, orderNo, itemTitle, courier, trackingNo }) => ({
+    subject: `Order ${orderNo} dispatched`,
+    text: `Hi ${name},
+
+Your order item "${itemTitle}" has been dispatched.
+
+Order number: ${orderNo}
+Courier: ${courier}
+Tracking number: ${trackingNo}
+
+Thank you for shopping with Online Bookstore.`,
+  }),
 };
 
 async function notify(user, type, data) {
   const template = templates[type];
 
   if (!template) {
-    throw new Error(`Unknown notification type: ${type}`);
+    throw new Error(`Unknown notification template: ${type}`);
   }
 
   const { subject, text } = template({
@@ -75,8 +113,9 @@ async function notify(user, type, data) {
   } catch (err) {
     logger.warn(
       { err: err.message, type },
-      'notification send failed; queued for retry',
+      'notification send failed; queued for retry'
     );
+
     row.status = 'FAILED';
   }
 
