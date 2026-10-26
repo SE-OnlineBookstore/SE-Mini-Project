@@ -90,14 +90,14 @@ describe('FR-22 Seller sales dashboard API', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
-    expect(response.body.data.summary).toMatchObject({
-      unitsSold: 3,
-      grossRevenue: 25000,
-      returnedUnits: 1,
-      returnedRevenue: 5000,
-      commission: null,
-      netSettlement: null,
-    });
+   expect(response.body.data.summary).toMatchObject({
+  unitsSold: 3,
+  grossRevenue: 25000,
+  returnedUnits: 1,
+  returnedRevenue: 5000,
+  commission: 2500,
+  netSettlement: 17500,
+});
     expect(response.body.data.orders).toHaveLength(1);
     expect(response.body.data.orders[0]).toMatchObject({
       orderNo: 'OB-20261010-00001',

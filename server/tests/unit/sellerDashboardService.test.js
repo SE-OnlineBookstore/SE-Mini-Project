@@ -101,11 +101,12 @@ describe('Seller dashboard service', () => {
         grossRevenue: 250,
         returnedUnits: 1,
         returnedRevenue: 50,
-        commission: null,
-        netSettlement: null,
+        commission: 25,
+        netSettlement: 175,
       });
 
       expect(result.orders).toHaveLength(1);
+
       expect(result.orders[0]).toMatchObject({
         orderId,
         orderNo: 'ORD-001',
@@ -129,10 +130,14 @@ describe('Seller dashboard service', () => {
       );
 
       expect(OrderItem.find).not.toHaveBeenCalled();
+
       expect(result.summary.unitsSold).toBe(0);
       expect(result.summary.grossRevenue).toBe(0);
       expect(result.summary.returnedUnits).toBe(0);
       expect(result.summary.returnedRevenue).toBe(0);
+      expect(result.summary.commission).toBe(0);
+      expect(result.summary.netSettlement).toBe(0);
+
       expect(result.orders).toEqual([]);
     });
   });

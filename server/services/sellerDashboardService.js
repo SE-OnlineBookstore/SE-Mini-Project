@@ -1,5 +1,7 @@
+
 const { Order, OrderItem } = require('../models');
 const { E } = require('../utils/AppError');
+const { commissionRate } = require('../config/env');
 
 function parseDateRange(from, to) {
   const datePattern = /^\d{4}-\d{2}-\d{2}$/;
@@ -93,6 +95,14 @@ async function getDashboard(sellerId, from, to) {
     0,
   );
 
+  const commission = Number(
+    (grossRevenue * commissionRate).toFixed(2),
+  );
+
+  const netSettlement = Number(
+    (grossRevenue - returnedRevenue - commission).toFixed(2),
+  );
+
   const orderSummaries = matchingOrders.map((order) => {
     const sellerItems = itemsByOrder.get(String(order._id));
 
@@ -125,10 +135,10 @@ async function getDashboard(sellerId, from, to) {
       grossRevenue,
       returnedUnits,
       returnedRevenue,
-      commission: null,
-      netSettlement: null,
+      commission,
+      netSettlement,
       settlementNote:
-        'Commission and settlement cannot be calculated until the commission policy and refund rules are defined.',
+        'A configurable commission rate is applied; the SRS does not specify a rate.',
     },
     orders: orderSummaries,
   };
