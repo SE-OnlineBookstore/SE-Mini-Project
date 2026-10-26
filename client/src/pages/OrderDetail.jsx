@@ -1,4 +1,4 @@
-// Order Detail & Confirmation page with Sandbox Payment (FR-16).
+// Order Detail & Confirmation page with Sandbox Payment (FR-16) and PDF Invoice (FR-17).
 import { useEffect, useState, useCallback } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -19,6 +19,10 @@ export default function OrderDetail() {
   const [paying, setPaying] = useState(false);
   const [payError, setPayError] = useState(null);
   const [paySuccess, setPaySuccess] = useState(null);
+
+  // Invoice download state (FR-17)
+  const [downloadingInvoice, setDownloadingInvoice] = useState(false);
+  const [invoiceError, setInvoiceError] = useState(null);
 
   const justPlaced = location.state?.justPlaced;
 
@@ -67,6 +71,27 @@ export default function OrderDetail() {
       setPayError(readError(err).message);
     } finally {
       setPaying(false);
+    }
+  };
+
+  const handleDownloadInvoice = async () => {
+    setDownloadingInvoice(true);
+    setInvoiceError(null);
+    try {
+      const response = await api.get(`/orders/${id}/invoice`, { responseType: 'blob' });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Invoice-${orderData.order.orderNo}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setInvoiceError(readError(err).message || 'Failed to download invoice PDF.');
+    } finally {
+      setDownloadingInvoice(false);
     }
   };
 
@@ -131,7 +156,26 @@ export default function OrderDetail() {
           <h1 style={{ marginBottom: '4px' }}>Order {order.orderNo}</h1>
           <p className="muted" style={{ margin: 0 }}>Placed on {new Date(order.createdAt).toLocaleDateString()}</p>
         </div>
-        <div>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {isConfirmed && (
+            <button
+              type="button"
+              onClick={handleDownloadInvoice}
+              disabled={downloadingInvoice}
+              style={{
+                padding: '6px 14px',
+                fontSize: '0.9rem',
+                fontWeight: 'bold',
+                background: '#1d4ed8',
+                borderColor: '#1d4ed8',
+                color: '#ffffff',
+                cursor: 'pointer',
+                borderRadius: '6px',
+              }}
+            >
+              {downloadingInvoice ? 'Downloading…' : '📄 Download Invoice (PDF)'}
+            </button>
+          )}
           <span
             className="chip"
             style={{
@@ -253,10 +297,41 @@ export default function OrderDetail() {
 
           {isConfirmed && (
             <section style={{ border: '1px solid #7bc67b', borderRadius: '8px', padding: '16px', background: '#f4fbf4' }}>
-              <h3 style={{ color: '#0d7a2f', margin: '0 0 8px 0' }}>✅ Payment Confirmed</h3>
-              <p style={{ margin: 0, fontSize: '0.95rem' }}>
-                Your payment for order <strong>{order.orderNo}</strong> has been signature-verified and confirmed. Stock has been reserved.
-              </p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                  <h3 style={{ color: '#0d7a2f', margin: '0 0 8px 0' }}>✅ Payment Confirmed</h3>
+                  <p style={{ margin: 0, fontSize: '0.95rem' }}>
+                    Your payment for order <strong>{order.orderNo}</strong> has been signature-verified and confirmed. Stock has been reserved.
+                  </p>
+                  <p style={{ margin: '6px 0 0 0', fontSize: '0.9rem', color: '#475569' }}>
+                    A tax invoice has been generated and e-mailed to <strong>{user.email}</strong>.
+                  </p>
+                </div>
+                <div>
+                  <button
+                    type="button"
+                    onClick={handleDownloadInvoice}
+                    disabled={downloadingInvoice}
+                    style={{
+                      padding: '10px 18px',
+                      fontSize: '0.95rem',
+                      fontWeight: 'bold',
+                      background: '#1d4ed8',
+                      borderColor: '#1d4ed8',
+                      color: '#ffffff',
+                      cursor: 'pointer',
+                      borderRadius: '6px',
+                    }}
+                  >
+                    {downloadingInvoice ? 'Generating PDF…' : '📄 Download Invoice (PDF)'}
+                  </button>
+                </div>
+              </div>
+              {invoiceError && (
+                <div className="error" style={{ marginTop: '12px', padding: '8px 12px' }}>
+                  {invoiceError}
+                </div>
+              )}
             </section>
           )}
         </div>
@@ -283,6 +358,21 @@ export default function OrderDetail() {
             <span>Total Amount:</span>
             <span>{rupees(order.totalAmount)}</span>
           </div>
+
+          {isConfirmed && (
+            <div style={{ marginTop: '16px' }}>
+              <button
+                type="button"
+                onClick={handleDownloadInvoice}
+                disabled={downloadingInvoice}
+                className="secondary"
+                style={{ width: '100%', padding: '8px 12px', fontSize: '0.9rem', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px' }}
+              >
+                <span>📄</span> {downloadingInvoice ? 'Downloading…' : 'Download Tax Invoice'}
+              </button>
+            </div>
+          )}
+
           <div style={{ marginTop: '20px' }}>
             <Link to="/" style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}>
               &larr; Back to Catalogue

@@ -10,11 +10,11 @@ const orderSchema = require('../validators/order.schema');
 const orderController = require('../controllers/orderController');
 
 router.use(verifyJWT);
-router.use(authorizeRoles('BUYER'));
 
-router.get('/', h(checkoutController.listOrders));
-router.post('/', validate(checkoutSchema.checkout), h(checkoutController.checkout));
-router.post('/checkout-summary', validate(orderSchema.checkoutSummary), h(orderController.checkoutSummary));
-router.get('/:id', validate(checkoutSchema.orderId), h(checkoutController.getOrder));
+router.get('/', authorizeRoles('BUYER'), h(checkoutController.listOrders));
+router.post('/', authorizeRoles('BUYER'), validate(checkoutSchema.checkout), h(checkoutController.checkout));
+router.post('/checkout-summary', authorizeRoles('BUYER'), validate(orderSchema.checkoutSummary), h(orderController.checkoutSummary));
+router.get('/:id', authorizeRoles('BUYER'), validate(checkoutSchema.orderId), h(checkoutController.getOrder));
+router.get('/:id/invoice', authorizeRoles('BUYER', 'ADMIN'), validate(checkoutSchema.orderId), h(orderController.downloadInvoice));
 
 module.exports = router;
