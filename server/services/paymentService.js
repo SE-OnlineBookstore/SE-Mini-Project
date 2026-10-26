@@ -6,6 +6,7 @@ const OrderItem = require('../models/OrderItem');
 const Listing = require('../models/Listing');
 const Coupon = require('../models/Coupon');
 const auditService = require('./auditService');
+const invoiceService = require('./invoiceService');
 const { safeEqual } = require('../utils/crypto');
 const { E } = require('../utils/AppError');
 
@@ -112,6 +113,9 @@ async function handleWebhook(payload, signature, secret = DEFAULT_SECRET) {
       order.order_status = 'CONFIRMED';
       order.status_history.push({ status: 'CONFIRMED', at: new Date() });
       await order.save();
+
+      // Generate and email PDF invoice upon confirmation (FR-17)
+      await invoiceService.generateAndSendInvoice(order._id);
 
       if (order.coupon_id) {
         await Coupon.updateOne({ _id: order.coupon_id }, { $inc: { used_count: 1 } });
