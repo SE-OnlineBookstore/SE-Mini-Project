@@ -15,6 +15,7 @@ const schema = Joi.object({
   SMTP_URL: Joi.string().allow('').default(''),
   MAIL_FROM: Joi.string().default('Online Bookstore <no-reply@bookstore.local>'),
   LOG_LEVEL: Joi.string().default('info'),
+  COMMISSION_RATE: Joi.number().min(0).max(1).default(0.10),
 }).unknown(true);
 
 const { value, error } = schema.validate(process.env, { abortEarly: false });
@@ -43,4 +44,5 @@ module.exports = {
   smtpUrl: value.SMTP_URL,
   mailFrom: value.MAIL_FROM,
   logLevel: value.LOG_LEVEL,
+  commissionRate: value.COMMISSION_RATE,
 };
