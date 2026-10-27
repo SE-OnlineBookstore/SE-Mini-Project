@@ -29,7 +29,7 @@ This matrix maps SRS v1.1 requirements to architecture components, design specif
 | 21 | FR-21 | Order fulfilment, packaging and courier dispatch | Seller & Admin Service | SAD 3.4, 4.3 | `server/services/fulfilmentService.js` | TC-S-03 | STC-11 | PASS | Hardhick |
 | 22 | FR-22 | Seller sales dashboard with settlement summary | Seller & Admin Service | SAD 3.4, 4.3 | `server/services/sellerService.js` | TC-S-04 | STC-11 | PENDING | Hardhick |
 | 23 | FR-23 | Administrator moderation and audit logging | Seller & Admin Service | SAD 3.4, 3.9 | `server/services/adminService.js` | TC-S-05 | STC-12 | PENDING | Hardhick |
-| 24 | FR-24 | Monthly platform analytics export (CSV & PDF) | Seller & Admin Service | SAD 3.4, 4.3 | `server/services/analyticsService.js` | TC-S-06 | STC-12 | PENDING | Hardhick |
+| 24 | **FR-24** | **Monthly platform analytics export (CSV & PDF)** | **Seller & Admin Service** | **SAD 3.4, 4.3** | `server/services/analyticsService.js`, `server/controllers/analyticsController.js`, `server/routes/analytics.routes.js` | **TC-S-06** | **STC-12** | **PASS** | **Hardhick** |
 | 25 | NFR-01 | Catalogue search performance (p95 < 2s under 200 users) | Catalogue + Redis | SAD 3.6, 3.8 | `server/services/catalogueService.js` | TC-N-01 | STC-13 | PASS | Deeptha |
 | 26 | NFR-02 | Availability monitoring (99% SLA, 5-min health polling) | Deployment + Monitor | SAD 3.6, 3.8 | `server/routes/health.routes.js` | TC-N-02 | STC-13 | PASS | Hardhick |
 | 27 | NFR-03 | Password hashing with bcrypt at cost factor 12 | Auth Service | SAD 3.6, 3.9 | `server/services/authService.js` | TC-N-03 | STC-14 | PASS | Koushik |
@@ -42,6 +42,7 @@ This matrix maps SRS v1.1 requirements to architecture components, design specif
 ---
 
 ### Verification Summary for FR-17 (PDF Invoice)
+
 - **Status:** CLOSED (PASS)
 - **Unit Tests:** `server/tests/unit/invoiceService.test.js` (7 passed)
 - **API Tests:** `server/tests/api/invoice.api.test.js` (4 passed)
@@ -53,6 +54,7 @@ This matrix maps SRS v1.1 requirements to architecture components, design specif
 ---
 
 ### Verification Summary for FR-18 (Order Tracking, Cancel and Return)
+
 - **Status:** CLOSED (PASS)
 - **Unit Tests:** `server/tests/unit/orderTracking.test.js` (13 passed)
 - **API Tests:** `server/tests/api/orderTracking.api.test.js` (10 passed)
@@ -63,3 +65,14 @@ This matrix maps SRS v1.1 requirements to architecture components, design specif
   - Return requests allowed within 7 days of delivery (`DELIVERED`); status transitions to `RETURNED`.
   - Return requests refused after 7-day window with HTTP 400 `RETURN_WINDOW_EXPIRED`, and refused prior to delivery with HTTP 400 `ORDER_NOT_DELIVERED`.
   - Object-level ownership (SR-06) verified: cross-buyer access returns HTTP 404.
+
+### Verification Summary for FR-24 (Monthly Platform Analytics Export)
+
+- **Status:** PASS
+- **Unit Tests:** `server/tests/unit/analyticsService.test.js`
+- **API Tests:** `server/tests/api/analytics.api.test.js`
+- **Acceptance Criteria Verification:**
+  - Automated tests verify monthly date filtering, analytics calculations, CSV formatting, PDF generation, download headers, and invalid month handling.
+  - Access control verifies that unauthenticated requests are rejected and non-admin users cannot access the export endpoints.
+  - Full test suite passed: 199 tests across 27 suites.
+  - ESLint checks passed.
