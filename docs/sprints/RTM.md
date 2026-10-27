@@ -23,7 +23,7 @@ This matrix maps SRS v1.1 requirements to architecture components, design specif
 | 15 | FR-15 | Checkout with address validation and optional coupon | Cart & Order Service | SAD 3.4, 5.3 | `server/services/checkoutService.js`, `orderService.js` | TC-O-03 | STC-08 | PASS | Pramod |
 | 16 | FR-16 | Online payment sandbox, retry limit & signed HMAC webhook | Cart & Order Service | SAD 3.4, 4.2.2 | `server/services/paymentService.js`, `client/src/pages/OrderDetail.jsx` | TC-O-04 | STC-08 | PASS | Pramod |
 | 17 | **FR-17** | **PDF invoice on confirmation, downloadable and e-mailed** | **Cart & Order Service, Notification** | **SAD 3.4, 3.8, 5.3** | `server/services/invoiceService.js`, `server/routes/order.routes.js`, `client/src/pages/OrderDetail.jsx`, `server/services/paymentService.js` | **TC-O-05** | **STC-09** | **CLOSED (PASS)** | **Pramod** |
-| 18 | FR-18 | Order tracking, cancellation and return lifecycle | Cart & Order Service | SAD 3.4, 5.3 | `server/services/orderService.js` | TC-O-06 | STC-09 | IN PROGRESS | Pramod |
+| 18 | **FR-18** | **Order tracking, cancellation and return lifecycle** | **Cart & Order Service** | **SAD 3.4, 5.3** | `server/services/orderService.js`, `server/routes/order.routes.js`, `client/src/pages/OrderDetail.jsx` | **TC-O-06** | **STC-09** | **CLOSED (PASS)** | **Pramod** |
 | 19 | FR-19 | Create listing from ISBN-13 with catalogue auto-fill | Seller & Admin Service | SAD 3.4, 4.3 | `server/services/listingService.js` | TC-S-01 | STC-10 | PASS | Hardhick |
 | 20 | FR-20 | Stock and price management with low-stock alerts | Seller & Admin Service | SAD 3.4, 4.3 | `server/services/listingService.js` | TC-S-02 | STC-10 | PASS | Hardhick |
 | 21 | FR-21 | Order fulfilment, packaging and courier dispatch | Seller & Admin Service | SAD 3.4, 4.3 | `server/services/fulfilmentService.js` | TC-S-03 | STC-11 | PASS | Hardhick |
@@ -49,3 +49,17 @@ This matrix maps SRS v1.1 requirements to architecture components, design specif
   - Automated test `TC-O-05` confirms invoice PDF generation, content validation, email delivery with attachment, and download endpoint.
   - Ownership isolation (SR-06) verified against cross-buyer attempts.
   - PDF layout satisfies SRS v1.1 section 5.3.3 including order number, buyer/delivery details, itemized line totals, shipping fee, discount, and statutory tax summary.
+
+---
+
+### Verification Summary for FR-18 (Order Tracking, Cancel and Return)
+- **Status:** CLOSED (PASS)
+- **Unit Tests:** `server/tests/unit/orderTracking.test.js` (13 passed)
+- **API Tests:** `server/tests/api/orderTracking.api.test.js` (10 passed)
+- **Acceptance Criteria Verification:**
+  - Automated test `TC-O-06` confirms order lifecycle tracking (`PLACED`, `CONFIRMED`, `PACKED`, `SHIPPED`, `DELIVERED`, `CANCELLED`, `RETURNED`) with timestamps and shipment consignment details.
+  - Cancellation allowed before dispatch (`PLACED`, `CONFIRMED`, `PACKED`); stock is restored atomically to listings (NFR-05, BR-11).
+  - Cancellation refused once dispatched (`SHIPPED`, `DELIVERED`) with HTTP 400 `CANNOT_CANCEL_DISPATCHED_ORDER`.
+  - Return requests allowed within 7 days of delivery (`DELIVERED`); status transitions to `RETURNED`.
+  - Return requests refused after 7-day window with HTTP 400 `RETURN_WINDOW_EXPIRED`, and refused prior to delivery with HTTP 400 `ORDER_NOT_DELIVERED`.
+  - Object-level ownership (SR-06) verified: cross-buyer access returns HTTP 404.

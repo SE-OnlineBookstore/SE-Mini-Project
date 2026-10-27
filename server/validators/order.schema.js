@@ -21,6 +21,13 @@ module.exports = {
     params: Joi.object({ id: objectId.required() }),
   },
 
+  orderAction: {
+    params: Joi.object({ id: objectId.required() }),
+    body: Joi.object({
+      reason: Joi.string().trim().max(500).allow('', null),
+    }).default({}),
+  },
+
   fulfilmentItemId: {
     params: Joi.object({ itemId: objectId.required() }),
   },
