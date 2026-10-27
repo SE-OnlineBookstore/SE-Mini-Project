@@ -87,11 +87,11 @@ async function createTestOrder(status = 'CONFIRMED', history = []) {
 
 beforeAll(async () => {
   await db.start();
-  seller = await makeUser({ role: 'SELLER' });
-  buyer = await makeUser({ role: 'BUYER' });
-  buyerAuth = await login(app, buyer.email);
-  otherBuyer = await makeUser({ role: 'BUYER' });
-  otherBuyerAuth = await login(app, otherBuyer.email);
+  seller = await makeUser('SELLER');
+  buyer = await makeUser('BUYER');
+  buyerAuth = await login(app, buyer);
+  otherBuyer = await makeUser('BUYER');
+  otherBuyerAuth = await login(app, otherBuyer);
   await setupTestData();
 });
 
