@@ -20,14 +20,21 @@ Repeated queries can be served from the in-server cache (TC-C-02).
 | 20 | 13556 | 13556 | 0 | 25 | 67 | 73 | 157 | Yes |
 
 ## Result
-PASS: at 200 concurrent users p97.5 is under 2000 ms, so p95 is under 2 s, with no failed requests.
+PARTIAL: with a warm cache, at 200 concurrent users p97.5 is under 2000 ms, so p95 is under 2 s, with no failed requests. With an empty cache the target was not met (see Cold-cache run).
 
 ## Notes
 The server global rate limiter (SR-10, 100 requests per minute per IP) was switched off for this test by starting the server with NODE_ENV=test, because simulated users from one machine share one IP address. A first run with the limiter on returned mostly HTTP 429 responses and was discarded.
 The load tool, the API server and the database connection all ran from one laptop against a shared free-tier database, so a dedicated deployment would be expected to perform better. This was not tested.
 
-## Deviations
-None.
+## Cold-cache run
+An earlier run with an empty cache measured p97.5 = 4532 ms at 200 users, which is above the 2 s target. The 2 s target is met only when repeated queries are served from the cache, so NFR-01 is met for warm-cache searches and is a known limitation for first-time (uncached) queries in this test setup.
 
-## Earlier run with a cold cache
-Before this run, the same test was run at 200 concurrent users right after the server started, with an empty in-server cache. It completed 12,721 requests with 0 failures, p50 = 269 ms and p97.5 = 4532 ms, which is above 2000 ms. The run recorded above reused the warm in-server cache from that earlier run (23,457 requests, p97.5 = 452 ms). The 2 s target is therefore met for repeated or cached queries, and was not met for first-time (uncached) queries at 200 users in this test setup (laptop, shared free-tier database). This is recorded as a known limitation.
+## Cache and query plan
+- The five-minute cache is implemented as `SEARCH_TTL_SEC = 300` in `server/services/catalogueService.js` (SRS NFR-01). Its expiry was not load-tested separately.
+- The query plan (compound text index, no collection scan) was not re-checked in this run.
+
+## Deviations
+- The Test Plan (TC-N-01) names k6 as the load tool. This test used autocannon, which reports the same latency percentiles at 200, 50 and 20 concurrent connections.
+- The reference load is 10,000 seeded listings. The test ran against 10000 seeded listings.
+- The test ran against a local server with the global rate limiter off (NODE_ENV=test) and the shared MongoDB Atlas free cluster, not a production deployment.
+- Uncached first-time queries did not meet the 2 s target (see Cold-cache run above).

@@ -30,7 +30,7 @@ This matrix maps SRS v1.1 requirements to architecture components, design specif
 | 22 | FR-22 | Seller sales dashboard with settlement summary | Seller & Admin Service | SAD 3.4, 4.3 | `server/services/sellerService.js` | TC-S-04 | STC-11 | PENDING | Hardhick |
 | 23 | FR-23 | Administrator moderation and audit logging | Seller & Admin Service | SAD 3.4, 3.9 | `server/services/adminService.js` | TC-S-05 | STC-12 | PENDING | Hardhick |
 | 24 | FR-24 | Monthly platform analytics export (CSV & PDF) | Seller & Admin Service | SAD 3.4, 4.3 | `server/services/analyticsService.js` | TC-S-06 | STC-12 | PENDING | Hardhick |
-| 25 | NFR-01 | Catalogue search performance (p95 < 2s under 200 users) | Catalogue + Redis | SAD 3.6, 3.8 | `server/services/catalogueService.js` | TC-N-01 | STC-13 | PASS | Deeptha |
+| 25 | NFR-01 | Catalogue search performance (p95 < 2s under 200 users) | Catalogue + Redis | SAD 3.6, 3.8 | `server/services/catalogueService.js` | TC-N-01 | STC-13 | PARTIAL | Deeptha |
 | 26 | NFR-02 | Availability monitoring (99% SLA, 5-min health polling) | Deployment + Monitor | SAD 3.6, 3.8 | `server/routes/health.routes.js` | TC-N-02 | STC-13 | PASS | Hardhick |
 | 27 | NFR-03 | Password hashing with bcrypt at cost factor 12 | Auth Service | SAD 3.6, 3.9 | `server/services/authService.js` | TC-N-03 | STC-14 | PASS | Koushik |
 | 28 | NFR-04 | Usability of checkout within 4 screens & 360px viewport | React Presentation Tier | SAD 3.4, 3.8 | `client/src/pages/Cart.jsx`, `OrderDetail.jsx` | TC-N-04 | STC-14 | PASS | Pramod |
