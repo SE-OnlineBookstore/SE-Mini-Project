@@ -253,6 +253,23 @@ paths:
         '200': { description: order and lines }
         '401': { $ref: '#/components/responses/Error' }
         '404': { $ref: '#/components/responses/Error' }
+  /orders/{id}/invoice:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+    get:
+      security: [{ bearer: [] }]
+      summary: Download PDF invoice for confirmed order (FR-17, TC-O-05)
+      responses:
+        '200':
+          description: PDF invoice document
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
   /payments/intent:
     post:
       security: [{ bearer: [] }]

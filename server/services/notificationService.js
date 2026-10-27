@@ -80,9 +80,20 @@ Tracking number: ${trackingNo}
 
 Thank you for shopping with Online Bookstore.`,
   }),
+
+  ORDER_INVOICE: ({ name, orderNo, totalAmount }) => ({
+    subject: `Tax invoice for order ${orderNo}`,
+    text: `Hi ${name},
+
+Thank you for your purchase! Your order ${orderNo} has been confirmed.
+
+Please find attached the official tax invoice for your records (Total: Rs. ${(Number(totalAmount) / 100).toFixed(2)}).
+
+Thank you for shopping with Online Bookstore.`,
+  }),
 };
 
-async function notify(user, type, data) {
+async function notify(user, type, data, attachments = []) {
   const template = templates[type];
 
   if (!template) {
@@ -106,6 +117,7 @@ async function notify(user, type, data) {
       to: user.email,
       subject,
       text,
+      attachments,
     });
 
     row.status = 'SENT';
@@ -113,7 +125,7 @@ async function notify(user, type, data) {
   } catch (err) {
     logger.warn(
       { err: err.message, type },
-      'notification send failed; queued for retry'
+      'notification send failed; queued for retry',
     );
 
     row.status = 'FAILED';
