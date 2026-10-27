@@ -34,7 +34,7 @@ An earlier run with an empty cache measured p97.5 = 4532 ms at 200 users, which 
 - The query plan (compound text index, no collection scan) was not re-checked in this run.
 
 ## Deviations
+The database held the 10,000 seeded listings of the reference load.
 - The Test Plan (TC-N-01) names k6 as the load tool. This test used autocannon, which reports the same latency percentiles at 200, 50 and 20 concurrent connections.
-- The reference load is 10,000 seeded listings. The test ran against 10000 seeded listings.
 - The test ran against a local server with the global rate limiter off (NODE_ENV=test) and the shared MongoDB Atlas free cluster, not a production deployment.
 - Uncached first-time queries did not meet the 2 s target (see Cold-cache run above).
