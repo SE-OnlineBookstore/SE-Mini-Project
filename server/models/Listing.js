@@ -10,6 +10,11 @@ const listingSchema = new Schema(
     price: { type: Number, required: true, min: 1 }, // paise
     stock_qty: { type: Number, required: true, min: 0 },
     status: { type: String, required: true, enum: ['ACTIVE', 'OUT_OF_STOCK', 'UNLISTED', 'BLOCKED'], default: 'ACTIVE' },
+    pre_block_status: {
+  type: String,
+  enum: ['ACTIVE', 'OUT_OF_STOCK', 'UNLISTED'],
+  select: false,
+},
   },
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } },
 );

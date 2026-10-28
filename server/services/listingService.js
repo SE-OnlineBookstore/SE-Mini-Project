@@ -89,15 +89,17 @@ async function updateListing(sellerId, listingId, input) {
 
   const previousStock = listing.stock_qty;
 
-  if (input.stock_qty !== undefined) {
-    listing.stock_qty = input.stock_qty;
+if (input.stock_qty !== undefined) {
+  listing.stock_qty = input.stock_qty;
 
+  if (listing.status !== 'BLOCKED') {
     if (input.stock_qty === 0) {
       listing.status = 'OUT_OF_STOCK';
     } else if (listing.status === 'OUT_OF_STOCK') {
       listing.status = 'ACTIVE';
     }
   }
+}
 
   await listing.save();
   await catalogueService.refreshBookStats(listing.book_id);
