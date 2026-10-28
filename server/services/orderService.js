@@ -1,11 +1,15 @@
-// Checkout and order management (FR-15).
+// Checkout and order management (FR-15, FR-18; TC-O-03, TC-O-06).
 const Order = require('../models/Order');
 const OrderItem = require('../models/OrderItem');
 const Cart = require('../models/Cart');
 const CartItem = require('../models/CartItem');
 const Address = require('../models/Address');
 const Coupon = require('../models/Coupon');
+const Listing = require('../models/Listing');
+const Shipment = require('../models/Shipment');
+const User = require('../models/User');
 const { E } = require('../utils/AppError');
+const notificationService = require('./notificationService');
 
 const FREE_SHIPPING_THRESHOLD = 50000; // 500 rupees in paise (SRS 5.3.3 / FR-15)
 const STANDARD_SHIPPING_FEE = 4000; // 40 rupees in paise
@@ -287,12 +291,194 @@ async function getOrder(buyerId, orderId) {
   };
 }
 
+// FR-18 / TC-O-06: Order lifecycle tracking with timestamps and shipment details
+async function getOrderTracking(buyerId, orderId) {
+  const order = await Order.findOne({ _id: orderId, buyer_id: buyerId });
+  if (!order) {
+    throw E.notFound('ORDER_NOT_FOUND', 'Order not found.');
+  }
+
+  const items = await OrderItem.find({ order_id: order._id });
+  const shipments = await Shipment.find({ order_id: order._id }).sort({ dispatch_date: 1 });
+
+  const isCancellable = ['PLACED', 'CONFIRMED', 'PACKED'].includes(order.order_status);
+
+  let isReturnable = false;
+  let returnWindowClosesAt = null;
+
+  if (order.order_status === 'DELIVERED') {
+    const deliveredHistory = [...(order.status_history || [])].reverse().find((h) => h.status === 'DELIVERED');
+    const deliveredAt = deliveredHistory ? new Date(deliveredHistory.at) : new Date(order.updated_at || order.created_at);
+    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+    const windowCloses = new Date(deliveredAt.getTime() + sevenDaysMs);
+    returnWindowClosesAt = windowCloses;
+    if (Date.now() <= windowCloses.getTime()) {
+      isReturnable = true;
+    }
+  }
+
+  return {
+    orderId: String(order._id),
+    orderNo: order.order_no,
+    orderStatus: order.order_status,
+    createdAt: order.created_at,
+    statusHistory: order.status_history || [],
+    isCancellable,
+    isReturnable,
+    returnWindowClosesAt,
+    shipments: shipments.map((s) => ({
+      id: String(s._id),
+      orderItemId: String(s.order_item_id),
+      courier: s.courier,
+      trackingNo: s.tracking_no,
+      dispatchDate: s.dispatch_date,
+    })),
+    items: items.map((i) => ({
+      id: String(i._id),
+      listingId: String(i.listing_id),
+      title: i.title,
+      quantity: i.quantity,
+      unitPrice: i.unit_price,
+      itemStatus: i.item_status,
+      deliveredAt: i.delivered_at,
+    })),
+  };
+}
+
+// FR-18 / TC-O-06: Cancel order before dispatch; restore stock to listings
+async function cancelOrder(buyerId, orderId, { reason } = {}) {
+  const order = await Order.findOne({ _id: orderId, buyer_id: buyerId });
+  if (!order) {
+    throw E.notFound('ORDER_NOT_FOUND', 'Order not found.');
+  }
+
+  if (order.order_status === 'CANCELLED') {
+    throw E.badRequest('ORDER_ALREADY_CANCELLED', 'Order is already cancelled.');
+  }
+
+  if (order.order_status === 'RETURNED') {
+    throw E.badRequest('ORDER_ALREADY_RETURNED', 'Cannot cancel an order that has already been returned.');
+  }
+
+  if (['SHIPPED', 'DELIVERED'].includes(order.order_status)) {
+    throw E.badRequest(
+      'CANNOT_CANCEL_DISPATCHED_ORDER',
+      'Orders that have already been dispatched cannot be cancelled; you may request a return within seven days of delivery.',
+    );
+  }
+
+  if (!['PLACED', 'CONFIRMED', 'PACKED'].includes(order.order_status)) {
+    throw E.badRequest('INVALID_ORDER_STATE_FOR_CANCELLATION', `Order with status ${order.order_status} cannot be cancelled.`);
+  }
+
+  // Restore inventory stock for each order line (SRS FR-18 / NFR-05 / BR-11)
+  const items = await OrderItem.find({ order_id: order._id });
+  for (const item of items) {
+    const listing = await Listing.findById(item.listing_id);
+    if (listing) {
+      listing.stock_qty += item.quantity;
+      if (listing.status === 'OUT_OF_STOCK' && listing.stock_qty > 0) {
+        listing.status = 'ACTIVE';
+      }
+      await listing.save();
+    }
+    item.item_status = 'CANCELLED';
+    await item.save();
+  }
+
+  order.order_status = 'CANCELLED';
+  order.status_history.push({ status: 'CANCELLED', at: new Date() });
+  await order.save();
+
+  try {
+    const buyer = await User.findById(buyerId);
+    if (buyer && notificationService && typeof notificationService.notify === 'function') {
+      await notificationService.notify(buyer, 'ORDER_CANCELLED', {
+        orderNo: order.order_no,
+        reason: reason || 'Cancellation requested by buyer',
+      });
+    }
+  } catch (_) {
+    // Fulfilment/cancellation must not fail if notification is unavailable
+  }
+
+  return {
+    orderId: String(order._id),
+    orderNo: order.order_no,
+    orderStatus: order.order_status,
+    statusHistory: order.status_history,
+    message: 'Order successfully cancelled and stock restored to inventory.',
+  };
+}
+
+// FR-18 / TC-O-06: Return order within seven days of delivery
+async function returnOrder(buyerId, orderId, { reason } = {}) {
+  const order = await Order.findOne({ _id: orderId, buyer_id: buyerId });
+  if (!order) {
+    throw E.notFound('ORDER_NOT_FOUND', 'Order not found.');
+  }
+
+  if (order.order_status === 'RETURNED') {
+    throw E.badRequest('ORDER_ALREADY_RETURNED', 'A return has already been requested for this order.');
+  }
+
+  if (order.order_status === 'CANCELLED') {
+    throw E.badRequest('ORDER_ALREADY_CANCELLED', 'Cannot return a cancelled order.');
+  }
+
+  if (order.order_status !== 'DELIVERED') {
+    throw E.badRequest('ORDER_NOT_DELIVERED', 'A return request can only be submitted after the order has been delivered.');
+  }
+
+  // Check 7-day return window from delivery date (SRS FR-18 / BR-06)
+  const deliveredHistory = [...(order.status_history || [])].reverse().find((h) => h.status === 'DELIVERED');
+  const deliveredAt = deliveredHistory ? new Date(deliveredHistory.at) : new Date(order.updated_at || order.created_at);
+  const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+  const elapsed = Date.now() - deliveredAt.getTime();
+
+  if (elapsed > sevenDaysMs) {
+    throw E.badRequest(
+      'RETURN_WINDOW_EXPIRED',
+      'The 7-day return window for this order has expired. Returns must be requested within seven days of delivery.',
+    );
+  }
+
+  await OrderItem.updateMany({ order_id: order._id }, { $set: { item_status: 'RETURNED' } });
+
+  order.order_status = 'RETURNED';
+  order.status_history.push({ status: 'RETURNED', at: new Date() });
+  await order.save();
+
+  try {
+    const buyer = await User.findById(buyerId);
+    if (buyer && notificationService && typeof notificationService.notify === 'function') {
+      await notificationService.notify(buyer, 'ORDER_RETURNED', {
+        orderNo: order.order_no,
+        reason: reason || 'Return requested by buyer',
+      });
+    }
+  } catch (_) {
+    // Non-blocking notification
+  }
+
+  return {
+    orderId: String(order._id),
+    orderNo: order.order_no,
+    orderStatus: order.order_status,
+    statusHistory: order.status_history,
+    message: 'Return request submitted successfully within the 7-day return window.',
+  };
+}
+
 module.exports = {
   validateAndComputeTotals,
   getCheckoutSummary,
   createOrder,
   listOrders,
   getOrder,
+  getOrderTracking,
+  cancelOrder,
+  returnOrder,
   FREE_SHIPPING_THRESHOLD,
   STANDARD_SHIPPING_FEE,
 };

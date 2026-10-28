@@ -15,6 +15,9 @@ router.get('/', authorizeRoles('BUYER'), h(checkoutController.listOrders));
 router.post('/', authorizeRoles('BUYER'), validate(checkoutSchema.checkout), h(checkoutController.checkout));
 router.post('/checkout-summary', authorizeRoles('BUYER'), validate(orderSchema.checkoutSummary), h(orderController.checkoutSummary));
 router.get('/:id', authorizeRoles('BUYER'), validate(checkoutSchema.orderId), h(checkoutController.getOrder));
+router.get('/:id/tracking', authorizeRoles('BUYER'), validate(orderSchema.orderId), h(orderController.getOrderTracking));
+router.post('/:id/cancel', authorizeRoles('BUYER'), validate(orderSchema.orderAction), h(orderController.cancelOrder));
+router.post('/:id/return', authorizeRoles('BUYER'), validate(orderSchema.orderAction), h(orderController.returnOrder));
 router.get('/:id/invoice', authorizeRoles('BUYER', 'ADMIN'), validate(checkoutSchema.orderId), h(orderController.downloadInvoice));
 
 module.exports = router;

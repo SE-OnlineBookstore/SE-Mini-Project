@@ -270,6 +270,52 @@ paths:
         '401': { $ref: '#/components/responses/Error' }
         '403': { $ref: '#/components/responses/Error' }
         '404': { $ref: '#/components/responses/Error' }
+  /orders/{id}/tracking:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+    get:
+      security: [{ bearer: [] }]
+      summary: Track order lifecycle with timestamps and shipment information (FR-18, TC-O-06)
+      responses:
+        '200':
+          description: Order tracking details including status history and shipments
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /orders/{id}/cancel:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+    post:
+      security: [{ bearer: [] }]
+      summary: Cancel order before dispatch and restore inventory stock (FR-18, TC-O-06)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        '200':
+          description: Order cancelled successfully
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /orders/{id}/return:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+    post:
+      security: [{ bearer: [] }]
+      summary: Request order return within 7 days of delivery (FR-18, TC-O-06)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        '200':
+          description: Order return requested successfully
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
   /payments/intent:
     post:
       security: [{ bearer: [] }]
