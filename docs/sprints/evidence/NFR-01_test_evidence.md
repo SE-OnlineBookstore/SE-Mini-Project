@@ -12,6 +12,13 @@ The API server ran on the same laptop as the load tool and used the MongoDB Atla
 Autocannon reports p97.5 instead of p95. If p97.5 is under 2 s, then p95 is also under 2 s.
 Repeated queries can be served from the in-server cache (TC-C-02).
 
+## Results
+| Concurrent users | Total requests | Successful (2xx) | Failed (non-2xx, errors, timeouts) | p50 (ms) | p97.5 (ms) | p99 (ms) | max (ms) | p97.5 under 2000 ms |
+|---|---|---|---|---|---|---|---|---|
+| 200 | 29707 | 29707 | 0 | 76 | 166 | 2285 | 9488 | Yes |
+| 50 | 53373 | 53373 | 0 | 18 | 27 | 30 | 116 | Yes |
+| 20 | 54600 | 54600 | 0 | 6 | 11 | 13 | 24 | Yes |
+
 ## Result
 PASS: at 200 concurrent users p97.5 is 166 ms, under 2000 ms, so p95 is under 2 s, with no failed requests. This run started on a freshly started server with an empty cache.
 
