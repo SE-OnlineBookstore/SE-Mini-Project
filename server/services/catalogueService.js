@@ -62,19 +62,28 @@ function buildPipeline(params, categoryId) {
   };
 }
 
-async function search(params) {
-  const key = `search:${JSON.stringify(params)}`;
-  const cached = await cache.get(key);
-  if (cached) return { ...cached, cached: true };
+// Concurrent identical cache misses share one database query (NFR-01).
+const inflight = new Map();
 
+async function runSearch(params) {
   const categoryId = await resolveCategoryId(params.category);
   let result;
   if (categoryId === undefined) {
     result = { items: [], page: params.page, limit: params.limit, total: 0 };
   } else {
     const { items: itemsPipeline, count: countPipeline } = buildPipeline(params, categoryId);
-    const [items, count] = await Promise.all([Book.aggregate(itemsPipeline), Book.aggregate(countPipeline)]);
-    result = { items: items.map(toCard), page: params.page, limit: params.limit, total: count.length ? count[0].n : 0 };
+    // The total does not depend on page, limit or sort, so it is cached once per filter combination.
+    const countKey = `search:count:${JSON.stringify({ ...params, page: undefined, limit: undefined, sort: undefined })}`;
+    const cachedTotal = await cache.get(countKey);
+    const totalPromise = cachedTotal !== null
+      ? Promise.resolve(cachedTotal)
+      : Book.aggregate(countPipeline).then(async (count) => {
+        const n = count.length ? count[0].n : 0;
+        await cache.set(countKey, n, SEARCH_TTL_SEC);
+        return n;
+      });
+    const [items, total] = await Promise.all([Book.aggregate(itemsPipeline), totalPromise]);
+    result = { items: items.map(toCard), page: params.page, limit: params.limit, total };
   }
 
   // FR-08: when nothing matches, say so plainly and offer the nearest category.
@@ -84,9 +93,23 @@ async function search(params) {
     const fallback = near || (await Category.findOne({ parent_id: null }).sort({ name: 1 }).lean());
     result.suggestion = fallback ? { category: { id: String(fallback._id), name: fallback.name, slug: fallback.slug } } : null;
   }
-
-  await cache.set(key, result, SEARCH_TTL_SEC);
   return result;
+}
+
+async function search(params) {
+  const key = `search:${JSON.stringify(params)}`;
+  const cached = await cache.get(key);
+  if (cached) return { ...cached, cached: true };
+  if (inflight.has(key)) return inflight.get(key);
+
+  const pending = runSearch(params)
+    .then(async (result) => {
+      await cache.set(key, result, SEARCH_TTL_SEC);
+      return result;
+    })
+    .finally(() => inflight.delete(key));
+  inflight.set(key, pending);
+  return pending;
 }
 
 async function getBook(id) {
