@@ -48,6 +48,18 @@ async function createPaymentIntent(userId, { orderId }) {
     payment_status: 'CREATED',
   });
 
+    try {
+    await auditService.record({
+      actorId: userId,
+      action: 'PAYMENT_INTENT_CREATED',
+      targetType: 'PAYMENT',
+      targetId: String(payment._id),
+      reason: `Payment intent created for order ${order.order_no}`,
+    });
+  } catch (e) {
+    // Audit logging failure does not block payment intent creation.
+  }
+
   return {
     paymentId: String(payment._id),
     gatewayOrderId,
