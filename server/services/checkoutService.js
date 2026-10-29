@@ -380,6 +380,7 @@ module.exports = {
   checkout,
   getOrder,
   listOrders,
+  generateOrderNo,
   FLAT_SHIPPING_FEE,
   FREE_SHIPPING_THRESHOLD,
 };

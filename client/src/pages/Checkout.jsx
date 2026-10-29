@@ -175,14 +175,14 @@ export default function Checkout() {
           <p><Link to="/">Return to catalogue</Link></p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '24px', alignItems: 'start' }}>
+        <div className="checkout-layout">
           <div>
             {/* Delivery Address Section */}
             <section style={{ border: '1px solid var(--line)', borderRadius: '8px', padding: '16px', marginBottom: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <h2 style={{ fontSize: '1.2rem', margin: 0 }}>1. Delivery Address</h2>
                 {!showAddressForm && (
-                  <button type="button" className="link" onClick={() => setShowAddressForm(true)}>
+                  <button type="button" className="link" onClick={() => setShowAddressForm(true)} aria-label="Add a new delivery address">
                     + Add New Address
                   </button>
                 )}
@@ -191,10 +191,11 @@ export default function Checkout() {
               {showAddressForm ? (
                 <form onSubmit={handleAddNewAddress} style={{ background: '#f9f9f9', padding: '12px', borderRadius: '6px', marginBottom: '12px' }}>
                   <h3>New Delivery Address</h3>
-                  {addrError && <p className="error">{addrError}</p>}
+                  {addrError && <p className="error" role="alert">{addrError}</p>}
                   <div className="field">
-                    <label>Street Address</label>
+                    <label htmlFor="checkout-line1">Street Address</label>
                     <input
+                      id="checkout-line1"
                       required
                       value={newAddr.line1}
                       onChange={(e) => setNewAddr({ ...newAddr, line1: e.target.value })}
@@ -202,33 +203,37 @@ export default function Checkout() {
                     />
                   </div>
                   <div className="field">
-                    <label>Area / Street (Optional)</label>
+                    <label htmlFor="checkout-line2">Area / Street (Optional)</label>
                     <input
+                      id="checkout-line2"
                       value={newAddr.line2}
                       onChange={(e) => setNewAddr({ ...newAddr, line2: e.target.value })}
                       placeholder="Area, Sector, Village"
                     />
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 120px', gap: '8px' }}>
+                  <div className="address-grid">
                     <div className="field">
-                      <label>City</label>
+                      <label htmlFor="checkout-city">City</label>
                       <input
+                        id="checkout-city"
                         required
                         value={newAddr.city}
                         onChange={(e) => setNewAddr({ ...newAddr, city: e.target.value })}
                       />
                     </div>
                     <div className="field">
-                      <label>State</label>
+                      <label htmlFor="checkout-state">State</label>
                       <input
+                        id="checkout-state"
                         required
                         value={newAddr.state}
                         onChange={(e) => setNewAddr({ ...newAddr, state: e.target.value })}
                       />
                     </div>
                     <div className="field">
-                      <label>PIN Code</label>
+                      <label htmlFor="checkout-pincode">PIN Code</label>
                       <input
+                        id="checkout-pincode"
                         required
                         pattern="^[1-9][0-9]{5}$"
                         maxLength="6"
@@ -271,9 +276,11 @@ export default function Checkout() {
                       <input
                         type="radio"
                         name="address"
+                        id={`addr-${a.id}`}
                         value={a.id}
                         checked={selectedAddressId === a.id}
                         onChange={() => setSelectedAddressId(a.id)}
+                        aria-label={`Select delivery address ${a.line1}, ${a.city}`}
                         style={{ width: 'auto', marginTop: '4px' }}
                       />
                       <div>
@@ -384,6 +391,7 @@ export default function Checkout() {
               onClick={handlePlaceOrder}
               disabled={submitting || !selectedAddressId || errors.length > 0}
               style={{ width: '100%', padding: '12px', fontSize: '1.05rem', fontWeight: 'bold' }}
+              aria-label="Place Order and Purchase"
             >
               {submitting ? 'Placing Order…' : 'Place Order & Purchase'}
             </button>
