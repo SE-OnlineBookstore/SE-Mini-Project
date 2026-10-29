@@ -99,16 +99,14 @@ async function handleWebhook(payload, signature, secret = DEFAULT_SECRET) {
   }
 
   if (status === 'SUCCESS') {
-    payment.payment_status = 'SUCCESS';
-    payment.gateway_txn_ref = txnRef;
-    if (method) payment.method = method;
-    await payment.save();
-
     // Confirm order and atomically decrement stock if not already confirmed
     if (order.order_status === 'PLACED') {
       const items = await OrderItem.find({ order_id: order._id });
 
-      // Atomic stock decrement for each listing
+      let stockReserved = true;
+      const decrementedItems = [];
+
+      // Atomic stock decrement for each listing (NFR-05: stock_qty >= item.quantity)
       for (const item of items) {
         const updatedListing = await Listing.findOneAndUpdate(
           { _id: item.listing_id, stock_qty: { $gte: item.quantity } },
@@ -116,11 +114,59 @@ async function handleWebhook(payload, signature, secret = DEFAULT_SECRET) {
           { new: true },
         );
 
-        if (updatedListing && updatedListing.stock_qty === 0) {
+        if (!updatedListing) {
+          stockReserved = false;
+          break;
+        }
+
+        decrementedItems.push({ listingId: item.listing_id, quantity: item.quantity });
+
+        if (updatedListing.stock_qty === 0) {
           updatedListing.status = 'OUT_OF_STOCK';
           await updatedListing.save();
         }
       }
+
+      if (!stockReserved) {
+        // Rollback any listings already decremented in this transaction
+        for (const dec of decrementedItems) {
+          await Listing.updateOne(
+            { _id: dec.listingId },
+            { $inc: { stock_qty: dec.quantity }, $set: { status: 'ACTIVE' } },
+          );
+        }
+
+        payment.payment_status = 'REFUND_PENDING';
+        payment.gateway_txn_ref = txnRef;
+        if (method) payment.method = method;
+        await payment.save();
+
+        try {
+          await auditService.record({
+            actorId: order.buyer_id,
+            action: 'STOCK_EXHAUSTED',
+            targetType: 'ORDER',
+            targetId: String(order._id),
+            reason: `Insufficient stock during payment confirmation for listing. Refund initiated (${txnRef}).`,
+          });
+        } catch (e) {
+          // Audit failure ignored
+        }
+
+        return {
+          status: 'error',
+          code: 'INSUFFICIENT_STOCK',
+          message: 'Listing stock is insufficient; order cannot be confirmed and refund has been initiated.',
+          orderStatus: order.order_status,
+          paymentStatus: 'REFUND_PENDING',
+          txnRef,
+        };
+      }
+
+      payment.payment_status = 'SUCCESS';
+      payment.gateway_txn_ref = txnRef;
+      if (method) payment.method = method;
+      await payment.save();
 
       order.order_status = 'CONFIRMED';
       order.status_history.push({ status: 'CONFIRMED', at: new Date() });
@@ -144,9 +190,14 @@ async function handleWebhook(payload, signature, secret = DEFAULT_SECRET) {
       } catch (e) {
         // Audit log errors do not block payment confirmation
       }
+    } else {
+      payment.payment_status = 'SUCCESS';
+      payment.gateway_txn_ref = txnRef;
+      if (method) payment.method = method;
+      await payment.save();
     }
 
-    return { status: 'ok', orderStatus: 'CONFIRMED', orderNo: order.order_no, paymentStatus: 'SUCCESS', txnRef };
+    return { status: 'ok', orderStatus: order.order_status, orderNo: order.order_no, paymentStatus: 'SUCCESS', txnRef };
   }
 
   // FAILED handling: order remains PLACED, stock not decremented

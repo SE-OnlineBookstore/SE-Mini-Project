@@ -34,7 +34,7 @@ This matrix maps SRS v1.1 requirements to architecture components, design specif
 | 26 | NFR-02 | Availability monitoring (99% SLA, 5-min health polling) | Deployment + Monitor | SAD 3.6, 3.8 | `server/routes/health.routes.js` | TC-N-02 | STC-13 | IN PROGRESS | Hardhick |
 | 27 | NFR-03 | Password hashing with bcrypt at cost factor 12 | Auth Service | SAD 3.6, 3.9 | `server/services/authService.js` | TC-N-03 | STC-14 | PASS | Koushik |
 | 28 | NFR-04 | Usability of checkout within 4 screens & 360px viewport | React Presentation Tier | SAD 3.4, 3.8 | `client/src/pages/Cart.jsx`, `OrderDetail.jsx` | TC-N-04 | STC-14 | PASS | Pramod |
-| 29 | NFR-05 | Atomic stock decrement at confirmation (no overselling) | Cart & Order + MongoDB | SAD 3.7, 3.8 | `server/services/paymentService.js` | TC-N-05 | STC-15 | PASS | Pramod |
+| 29 | **NFR-05** | **Atomic stock decrement at confirmation (no overselling)** | **Cart & Order + MongoDB** | **SAD 3.7, 3.8** | `server/services/paymentService.js`, `server/tests/api/payment.api.test.js` | **TC-N-05** | **STC-15** | **CLOSED (PASS)** | **Pramod** |
 | 30 | NFR-06 | Code quality gate (zero ESLint errors, >= 70% coverage) | CI / Quality Pipeline | SAD 3.6, 3.8 | `.github/workflows/ci.yml` | TC-N-06 | STC-15 | PASS | Hardhick |
 | 31 | NFR-07 | Cross-browser compatibility (Chrome, Edge, Firefox, Safari) | React Presentation Tier | SAD 3.4, 3.8 | `client/vite.config.js` | TC-N-07 | STC-16 | PASS | Deeptha |
 | 32 | NFR-08 | Append-only audit logging for admin and payment events | Audit Log Service | SAD 3.9, 4.1.1 | `server/services/auditService.js` | TC-N-08 | STC-16 | PASS | Koushik |
@@ -76,3 +76,16 @@ This matrix maps SRS v1.1 requirements to architecture components, design specif
   - Access control verifies that unauthenticated requests are rejected and non-admin users cannot access the export endpoints.
   - Full test suite passed: 199 tests across 27 suites.
   - ESLint checks passed.
+
+---
+
+### Verification Summary for NFR-05 (No Overselling - Atomic Stock Decrement)
+
+- **Status:** CLOSED (PASS)
+- **API Tests:** `server/tests/api/payment.api.test.js` (9 passed, including concurrent race test `TC-N-05`), `server/tests/api/cart.api.test.js` (7 passed)
+- **Check Script:** `docs/sprints/evidence/NFR-05_concurrency_check.js` (3/3 automated checks passed)
+- **Acceptance Criteria Verification:**
+  - Automated concurrency test confirms that when two concurrent orders attempt to confirm the last remaining copy of an inventory item (`stock_qty: 1`), exactly one order succeeds and transitions to `CONFIRMED`.
+  - The second concurrent order fails stock reservation, remains in `PLACED` state, and initiates `REFUND_PENDING` without overselling.
+  - Inventory quantity is guaranteed never to go below 0 (final `stock_qty: 0`, status transitioned to `OUT_OF_STOCK`).
+  - Cancellation of unfulfilled orders restores inventory stock atomically (BR-11).
