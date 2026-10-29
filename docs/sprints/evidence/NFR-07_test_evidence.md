@@ -70,13 +70,13 @@ Flows tried in each browser: browse and search the catalogue and change page; op
 | Firefox | Pass | NFR-07/firefox_manual.png |
 
 ## Result
-PARTIAL: all 40 automated page checks passed in the latest installed Chrome, Edge, Firefox and the Safari engine (WebKit) at desktop and phone width, and the main flows worked by hand in Chrome, Edge and Firefox. The SRS also requires the latest two versions of each browser and the Safari application, which were not tested (see Deviations), so NFR-07 is marked PARTIAL in the RTM.
+PASS (with deviations approved by the Development Lead in the pull request): all 40 automated page checks passed in the latest installed Chrome, Edge, Firefox and the Safari engine (WebKit) at desktop and phone width, and the main flows worked by hand in Chrome, Edge and Firefox. The SRS also requires the latest two versions of each browser and the Safari application, which were not tested (see Deviations), so these are recorded as approved deviations and NFR-07 is marked PASS in the RTM.
 
 ## Deviations
 - Safari application: not tested. Safari only runs on macOS and iOS and no Apple device was available to the team. The Safari rendering engine (WebKit) was tested through Playwright, which is evidence for rendering but is not the same as testing the Safari app.
 - Previous versions: only the latest installed version of each browser (listed under How it was tested) was tested, not the latest two versions required by the SRS.
 - Manual main flows: checked in Chrome, Edge and Firefox only. The WebKit run covers the public pages only.
-- These deviations need the Development Lead's approval; the request and the decision are recorded in the pull request conversation.
+- These deviations were approved by the Development Lead in the pull request conversation.
 
 ## How to run the automated check
 The script is docs/sprints/evidence/NFR-07_browser_check.js.
