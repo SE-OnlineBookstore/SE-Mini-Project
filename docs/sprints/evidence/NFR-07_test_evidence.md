@@ -70,9 +70,18 @@ Flows tried in each browser: browse and search the catalogue and change page; op
 | Firefox | Pass | NFR-07/firefox_manual.png |
 
 ## Result
-PASS: all automated page checks passed in Chrome, Edge, Firefox and the Safari engine (WebKit) at desktop and phone width, and the main flows worked in Chrome, Edge and Firefox.
+PARTIAL: all 40 automated page checks passed in the latest installed Chrome, Edge, Firefox and the Safari engine (WebKit) at desktop and phone width, and the main flows worked by hand in Chrome, Edge and Firefox. The SRS also requires the latest two versions of each browser and the Safari application, which were not tested (see Deviations), so NFR-07 is marked PARTIAL in the RTM.
 
 ## Deviations
-- Safari is not available on Windows and no Mac or iPhone was available. The Safari engine (WebKit) was tested through Playwright instead, which checks rendering but is not the Safari app. Safari itself was not tested.
-- Only the latest installed version of each browser was tested, not the latest two versions.
-- The main flows were checked by hand in Chrome, Edge and Firefox; the WebKit run covers the public pages only.
+- Safari application: not tested. Safari only runs on macOS and iOS and no Apple device was available to the team. The Safari rendering engine (WebKit) was tested through Playwright, which is evidence for rendering but is not the same as testing the Safari app.
+- Previous versions: only the latest installed version of each browser (listed under How it was tested) was tested, not the latest two versions required by the SRS.
+- Manual main flows: checked in Chrome, Edge and Firefox only. The WebKit run covers the public pages only.
+- These deviations need the Development Lead's approval; the request and the decision are recorded in the pull request conversation.
+
+## How to run the automated check
+The script is docs/sprints/evidence/NFR-07_browser_check.js.
+1. Install Playwright in a folder outside the repository: npm i playwright, then npx playwright install firefox webkit. Chrome and Edge must be installed on the machine.
+2. Start the server (npm run dev in server) and the client (npm run dev in client). The script expects the client on http://localhost:5173 and the server on http://localhost:5000; set WEB_URL and API_URL to change this.
+3. From the repository root run: NODE_PATH=$HOME/perf/node_modules node docs/sprints/evidence/NFR-07_browser_check.js .
+   (use the folder where Playwright was installed in place of $HOME/perf)
+The script writes the automated part of this file and the screenshots in docs/sprints/evidence/NFR-07/. Running it again overwrites this file, so the manual section and deviations above would have to be added again.

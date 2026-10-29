@@ -36,7 +36,7 @@ This matrix maps SRS v1.1 requirements to architecture components, design specif
 | 28 | NFR-04 | Usability of checkout within 4 screens & 360px viewport | React Presentation Tier | SAD 3.4, 3.8 | `client/src/pages/Cart.jsx`, `OrderDetail.jsx` | TC-N-04 | STC-14 | PASS | Pramod |
 | 29 | NFR-05 | Atomic stock decrement at confirmation (no overselling) | Cart & Order + MongoDB | SAD 3.7, 3.8 | `server/services/paymentService.js` | TC-N-05 | STC-15 | PASS | Pramod |
 | 30 | NFR-06 | Code quality gate (zero ESLint errors, >= 70% coverage) | CI / Quality Pipeline | SAD 3.6, 3.8 | `.github/workflows/ci.yml` | TC-N-06 | STC-15 | PASS | Hardhick |
-| 31 | NFR-07 | Cross-browser compatibility (Chrome, Edge, Firefox, Safari) | React Presentation Tier | SAD 3.4, 3.8 | `client/vite.config.js` | TC-N-07 | STC-16 | PASS | Deeptha |
+| 31 | NFR-07 | Cross-browser compatibility (Chrome, Edge, Firefox, Safari) | React Presentation Tier | SAD 3.4, 3.8 | `client/vite.config.js` | TC-N-07 | STC-16 | PARTIAL | Deeptha |
 | 32 | NFR-08 | Append-only audit logging for admin and payment events | Audit Log Service | SAD 3.9, 4.1.1 | `server/services/auditService.js` | TC-N-08 | STC-16 | PASS | Koushik |
 
 ---
