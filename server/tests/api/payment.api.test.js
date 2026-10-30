@@ -346,4 +346,62 @@ describe('TC-O-04 Online payment sandbox & HMAC webhook (FR-16)', () => {
       .send({ orderId });
     expect(otherBuyerRes.status).toBe(404);
   });
+
+  it('two concurrent orders for the last copy: exactly one succeeds and stock never goes below 0 (TC-N-05, NFR-05)', async () => {
+    // listing2 has stock_qty: 1
+    const order1 = await createPlacedOrder(buyer._id, [{ listing: listing2, quantity: 1, price: 45000 }]);
+    const order2 = await createPlacedOrder(otherBuyer._id, [{ listing: listing2, quantity: 1, price: 45000 }]);
+
+    const intentRes1 = await request(app).post('/api/v1/payments/intent').set(buyerAuth).send({ orderId: String(order1._id) });
+    const intentRes2 = await request(app).post('/api/v1/payments/intent').set(otherBuyerAuth).send({ orderId: String(order2._id) });
+
+    expect(intentRes1.status).toBe(201);
+    expect(intentRes2.status).toBe(201);
+
+    const payload1 = {
+      gatewayOrderId: intentRes1.body.gatewayOrderId,
+      txnRef: 'txn_concurrent_001',
+      status: 'SUCCESS',
+      amount: order1.total_amount,
+      method: 'UPI',
+    };
+    const payload2 = {
+      gatewayOrderId: intentRes2.body.gatewayOrderId,
+      txnRef: 'txn_concurrent_002',
+      status: 'SUCCESS',
+      amount: order2.total_amount,
+      method: 'CARD',
+    };
+
+    const sig1 = paymentService.computeSignature(payload1);
+    const sig2 = paymentService.computeSignature(payload2);
+
+    // Concurrently trigger webhook payment confirmations
+    const [res1, res2] = await Promise.all([
+      request(app).post('/api/v1/payments/webhook').set('x-signature', sig1).send(payload1),
+      request(app).post('/api/v1/payments/webhook').set('x-signature', sig2).send(payload2),
+    ]);
+
+    expect(res1.status).toBe(200);
+    expect(res2.status).toBe(200);
+
+    const results = [res1.body, res2.body];
+    const successes = results.filter((r) => r.orderStatus === 'CONFIRMED' && r.paymentStatus === 'SUCCESS');
+    const failures = results.filter((r) => r.code === 'INSUFFICIENT_STOCK' && r.paymentStatus === 'REFUND_PENDING');
+
+    // Exactly one succeeds, exactly one fails
+    expect(successes).toHaveLength(1);
+    expect(failures).toHaveLength(1);
+
+    // Stock never goes below 0; exactly 0 remaining
+    const finalListing = await Listing.findById(listing2._id);
+    expect(finalListing.stock_qty).toBe(0);
+    expect(finalListing.status).toBe('OUT_OF_STOCK');
+
+    // Check DB order statuses: exactly one confirmed, one stays placed
+    const updatedOrder1 = await Order.findById(order1._id);
+    const updatedOrder2 = await Order.findById(order2._id);
+    const statuses = [updatedOrder1.order_status, updatedOrder2.order_status].sort();
+    expect(statuses).toEqual(['CONFIRMED', 'PLACED']);
+  });
 });
