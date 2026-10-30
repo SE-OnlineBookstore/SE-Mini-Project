@@ -16,7 +16,7 @@ This matrix maps SRS v1.1 requirements to architecture components, design specif
 | 8 | FR-08 | Keyword search with compound text index | Catalogue Service | SAD 3.4, 4.3 | `server/services/catalogueService.js` | TC-C-02 | STC-04 | PASS | Deeptha |
 | 9 | FR-09 | Multi-facet filtering and sorting | Catalogue Service | SAD 3.4, 4.3 | `server/services/catalogueService.js` | TC-C-03 | STC-05 | PASS | Deeptha |
 | 10 | FR-10 | Book detail with active offers and conditions | Catalogue Service | SAD 3.4, 4.3 | `server/services/catalogueService.js` | TC-C-04 | STC-05 | PASS | Deeptha |
-| 11 | FR-11 | Verified-purchase rating and reviews | Catalogue Service | SAD 3.4, 4.3 | `server/services/reviewService.js` | TC-C-05 | STC-06 | PENDING | Deeptha |
+| 11 | FR-11 | Verified-purchase rating and reviews | Catalogue Service | SAD 3.4, 4.3 | `server/services/reviewService.js` | TC-C-05 | STC-06 | PASS | Deeptha |
 | 12 | FR-12 | Related titles recommendations (author & category) | Catalogue Service | SAD 3.4, 4.3 | `server/services/catalogueService.js` | TC-C-06 | STC-06 | PASS | Deeptha |
 | 13 | FR-13 | Shopping cart with quantity limits and persistence | Cart & Order Service | SAD 3.4, 5.3 | `server/services/cartService.js`, `client/src/pages/Cart.jsx` | TC-O-01 | STC-07 | PASS | Pramod |
 | 14 | FR-14 | Wishlist with single-action move-to-cart | Cart & Order Service | SAD 3.4, 5.3 | `server/services/wishlistService.js` | TC-O-02 | STC-07 | PASS | Pramod |
@@ -27,8 +27,8 @@ This matrix maps SRS v1.1 requirements to architecture components, design specif
 | 19 | FR-19 | Create listing from ISBN-13 with catalogue auto-fill | Seller & Admin Service | SAD 3.4, 4.3 | `server/services/listingService.js` | TC-S-01 | STC-10 | PASS | Hardhick |
 | 20 | FR-20 | Stock and price management with low-stock alerts | Seller & Admin Service | SAD 3.4, 4.3 | `server/services/listingService.js` | TC-S-02 | STC-10 | PASS | Hardhick |
 | 21 | FR-21 | Order fulfilment, packaging and courier dispatch | Seller & Admin Service | SAD 3.4, 4.3 | `server/services/fulfilmentService.js` | TC-S-03 | STC-11 | PASS | Hardhick |
-| 22 | FR-22 | Seller sales dashboard with settlement summary | Seller & Admin Service | SAD 3.4, 4.3 | `server/services/sellerService.js` | TC-S-04 | STC-11 | PENDING | Hardhick |
-| 23 | FR-23 | Administrator moderation and audit logging | Seller & Admin Service | SAD 3.4, 3.9 | `server/services/adminService.js` | TC-S-05 | STC-12 | PENDING | Hardhick |
+| 22 | FR-22 | Seller sales dashboard with settlement summary | Seller & Admin Service | SAD 3.4, 4.3 | `server/services/sellerService.js` | TC-S-04 | STC-11 | PASS | Hardhick |
+| 23 | FR-23 | Administrator moderation and audit logging | Seller & Admin Service | SAD 3.4, 3.9 | `server/services/adminService.js` | TC-S-05 | STC-12 | PASS | Hardhick |
 | 24 | **FR-24** | **Monthly platform analytics export (CSV & PDF)** | **Seller & Admin Service** | **SAD 3.4, 4.3** | `server/services/analyticsService.js`, `server/controllers/analyticsController.js`, `server/routes/analytics.routes.js` | **TC-S-06** | **STC-12** | **PASS** | **Hardhick** |
 | 25 | NFR-01 | Catalogue search performance (p95 < 2s under 200 users) | Catalogue + Redis | SAD 3.6, 3.8 | `server/services/catalogueService.js` | TC-N-01 | STC-13 | PASS | Deeptha |
 | 26 | NFR-02 | Availability monitoring (99% SLA, 5-min health polling) | Deployment + Monitor | SAD 3.6, 3.8 | `server/routes/health.routes.js` | TC-N-02 | STC-13 | IN PROGRESS | Hardhick |
