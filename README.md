@@ -89,9 +89,9 @@ server/
   app.js            API Gateway Layer: middleware order (helmet, CORS, rate limit, sanitise, routes, errors)
   config/           env validation, MongoDB connection, logger with redaction
   middleware/       verifyJWT, authorizeRoles, validate, rateLimit, requestId, errorHandler
-  routes/           auth, users, books, health (cart/orders/seller/admin arrive in Sprints 2-3)
+  routes/           auth, users, books, health, cart, orders, seller and admin
   controllers/      thin HTTP layer
-  services/         business rules: auth, otp, token, user, catalogue, audit, notification
+  services/         business rules: auth, catalogue, cart, orders, payment, invoice, reviews, seller, analytics and audit
   models/           all 17 collections from SRS v1.1 Appendix B
   adapters/         mailer (SMTP or stub), cache (Redis or in-memory)
   validators/       Joi schemas (unknown fields rejected)
@@ -99,10 +99,10 @@ server/
   tests/            unit/ and api/
 client/
   src/api/client.js Axios client with silent token refresh
-  src/pages/        Catalogue, BookDetail, Login, Register, VerifyOtp, Forgot/Reset password
+  src/pages/        Catalogue, BookDetail, authentication, cart, checkout and order-related screens
 docs/
   api/              OpenAPI specification
-  sprints/          Backlog, sprint plan and the GitHub Project setup script
+  sprints/          Backlog, RTM, sprint deviations and verification evidence
   testing/          Manual test cases
 ```
 
@@ -115,6 +115,48 @@ Implemented in the starter code:
 - Health endpoint, error model, all 17 data models and seed data
 
 Sprint 1 and Sprint 2 items are listed in `docs/sprints/BACKLOG.md` and tracked on the GitHub Project board.
+
+
+## Sprint 2 status and deliverables
+
+Sprint 2 ran from 26 to 30 October 2026. The implementation and verification work extended the bookstore across buyer reviews, invoices, order tracking, seller operations, administration, analytics and non-functional requirements.
+
+### Functional requirements
+
+- FR-11: Verified-purchase reviews
+- FR-17 and FR-18: PDF invoices, order tracking, cancellation and returns
+- FR-19 to FR-23: Seller listing, stock and price management, order fulfilment, sales dashboard and administrator moderation
+- FR-24: Monthly platform analytics export in CSV and PDF formats
+
+### Non-functional requirements
+
+- NFR-01: Search performance verification
+- NFR-02: Availability monitoring configured; full-window 99% SLA verification remains IN PROGRESS
+- NFR-04: Checkout usability
+- NFR-05: Atomic stock decrement to prevent overselling
+- NFR-06: Code quality and coverage gate
+- NFR-07: Cross-browser verification, with documented deviations
+- NFR-08: Audit logging, with verification limitations documented
+
+### Sprint 2 documents and evidence
+
+| Deliverable | Location |
+|---|---|
+| Requirement Traceability Matrix | `docs/sprints/RTM.md` |
+| Sprint 2 deviations | `docs/sprints/SPRINT_2_DEVIATIONS.md` |
+| Sprint 1 deviations | `docs/sprints/SPRINT_1_DEVIATIONS.md` |
+| Sprint 2 test evidence | `docs/sprints/evidence/` |
+| Sprint 1 demo | `docs/videos/sprint1_demo.mp4` |
+| Sprint 2 demo - Part 1 | `docs/videos/PART1_PROJ.mp4` |
+| Sprint 2 demo - Part 2 | `docs/videos/PART2_PROJ.mp4` |
+| Overall burn-up chart screenshot | `docs/sprints/evidence/burnup-overall.png` |
+| Sprint 2 burn-up chart screenshot | `docs/sprints/evidence/burnup-sprint2.png` |
+
+The RTM records each requirement's current verification status. Refer to the linked evidence before interpreting a requirement as passed.
+
+### Deployment
+
+Staging application: https://se-mini-project-s3v8.onrender.com
 
 ## Branching
 
