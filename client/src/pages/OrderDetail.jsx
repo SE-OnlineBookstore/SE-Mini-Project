@@ -501,7 +501,7 @@ export default function OrderDetail() {
         </div>
       </section>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '24px', marginTop: '24px' }}>
+      <div className="order-layout">
         <div>
           {/* Items Section */}
           <section style={{ border: '1px solid var(--line)', borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
@@ -565,13 +565,15 @@ export default function OrderDetail() {
                     </label>
                     <div style={{ display: 'flex', gap: '12px' }}>
                       {['UPI', 'CARD', 'NETBANKING'].map((method) => (
-                        <label key={method} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                        <label key={method} htmlFor={`payment-method-${method}`} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
                           <input
                             type="radio"
+                            id={`payment-method-${method}`}
                             name="paymentMethod"
                             value={method}
                             checked={selectedMethod === method}
                             onChange={(e) => setSelectedMethod(e.target.value)}
+                            aria-label={method === 'CARD' ? 'Credit / Debit Card' : method === 'NETBANKING' ? 'Net Banking' : 'UPI (GPay / PhonePe)'}
                             style={{ width: 'auto' }}
                           />
                           <span>{method === 'CARD' ? 'Credit / Debit Card' : method === 'NETBANKING' ? 'Net Banking' : 'UPI (GPay / PhonePe)'}</span>

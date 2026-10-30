@@ -33,7 +33,7 @@ This matrix maps SRS v1.1 requirements to architecture components, design specif
 | 25 | NFR-01 | Catalogue search performance (p95 < 2s under 200 users) | Catalogue + Redis | SAD 3.6, 3.8 | `server/services/catalogueService.js` | TC-N-01 | STC-13 | PASS | Deeptha |
 | 26 | NFR-02 | Availability monitoring (99% SLA, 5-min health polling) | Deployment + Monitor | SAD 3.6, 3.8 | `server/routes/health.routes.js` | TC-N-02 | STC-13 | IN PROGRESS | Hardhick |
 | 27 | NFR-03 | Password hashing with bcrypt at cost factor 12 | Auth Service | SAD 3.6, 3.9 | `server/services/authService.js` | TC-N-03 | STC-14 | PASS | Koushik |
-| 28 | NFR-04 | Usability of checkout within 4 screens & 360px viewport | React Presentation Tier | SAD 3.4, 3.8 | `client/src/pages/Cart.jsx`, `OrderDetail.jsx` | TC-N-04 | STC-14 | PASS | Pramod |
+| 28 | **NFR-04** | **Usability of checkout within 4 screens & 360px viewport** | **React Presentation Tier** | **SAD 3.4, 3.8** | `client/src/pages/Cart.jsx`, `client/src/pages/Checkout.jsx`, `client/src/pages/OrderDetail.jsx`, `server/tests/unit/checkoutUsability.test.js` | **TC-N-04** | **STC-14** | **CLOSED (PASS)** | **Pramod** |
 | 29 | NFR-05 | Atomic stock decrement at confirmation (no overselling) | Cart & Order + MongoDB | SAD 3.7, 3.8 | `server/services/paymentService.js` | TC-N-05 | STC-15 | PASS | Pramod |
 | 30 | NFR-06 | Code quality gate (zero ESLint errors, >= 70% coverage) | CI / Quality Pipeline | SAD 3.6, 3.8 | `.github/workflows/ci.yml` | TC-N-06 | STC-15 | PASS | Hardhick |
 | 31 | NFR-07 | Cross-browser compatibility (Chrome, Edge, Firefox, Safari) | React Presentation Tier | SAD 3.4, 3.8 | `client/vite.config.js` | TC-N-07 | STC-16 | PASS | Deeptha |
@@ -76,3 +76,17 @@ This matrix maps SRS v1.1 requirements to architecture components, design specif
   - Access control verifies that unauthenticated requests are rejected and non-admin users cannot access the export endpoints.
   - Full test suite passed: 199 tests across 27 suites.
   - ESLint checks passed.
+
+---
+
+### Verification Summary for NFR-04 (Usability of Checkout)
+
+- **Status:** CLOSED (PASS)
+- **Unit Tests:** `server/tests/unit/checkoutUsability.test.js` (6 passed)
+- **API Tests:** `server/tests/api/checkout.api.test.js` (12 passed), `server/tests/api/cart.api.test.js` (7 passed)
+- **Check Script:** `docs/sprints/evidence/NFR-04_checkout_check.js` (4/4 automated checks passed)
+- **Acceptance Criteria Verification:**
+  - Automated walkthrough confirms cart-to-confirmation completes in 3 screens (`/cart` -> `/checkout` -> `/orders/:id`), satisfying the <= 4 screens requirement.
+  - 360 px viewport usability verified with responsive single-column layout breakdown (`.checkout-layout`, `.order-layout`, `.address-grid`) and auto-scrolling tables, preventing horizontal page overflow.
+  - WCAG 2.1 AA color contrast compliance confirmed for all UI text and components (contrast ratios 6.67:1 to 17.04:1 vs requirement 4.5:1).
+  - Full keyboard reachability and focus visibility verified across all buttons, form controls, and selection inputs.

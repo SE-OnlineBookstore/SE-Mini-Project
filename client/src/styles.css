@@ -36,9 +36,34 @@ table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); }
 @media (max-width: 1024px) { .grid { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } .grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 420px) { .grid { grid-template-columns: 1fr; } th:nth-child(3), td:nth-child(3) { display: none; } }
+@media (max-width: 420px) { .grid { grid-template-columns: 1fr; } }
 
 /* NFR-07 small-screen tables: wide tables scroll inside themselves, the page does not scroll sideways at 360 px. */
 @media (max-width: 600px) {
   .page table { display: block; max-width: 100%; overflow-x: auto; }
+}
+
+/* NFR-04 Usability of checkout within 4 screens & 360 px viewport */
+.checkout-layout, .order-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  align-items: start;
+}
+.address-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 120px;
+  gap: 8px;
+}
+@media (max-width: 768px) {
+  .checkout-layout, .order-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+@media (max-width: 500px) {
+  .address-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
 }
