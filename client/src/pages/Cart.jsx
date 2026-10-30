@@ -151,6 +151,7 @@ export default function Cart() {
                       style={{ color: 'var(--error)' }}
                       disabled={busyItem === item.id}
                       onClick={() => removeItem(item.id)}
+                      aria-label={`Remove ${item.book?.title || 'item'} from cart`}
                     >
                       Remove
                     </button>
@@ -161,23 +162,24 @@ export default function Cart() {
           </table>
 
           <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-            <button type="button" className="link" onClick={clearCart}>
+            <button type="button" className="link" onClick={clearCart} aria-label="Clear all items from cart">
               Clear Cart
             </button>
-            <div style={{ textAlign: 'right' }}>
+            <div style={{ textAlign: 'right', flex: '1 1 280px' }}>
               <p style={{ margin: '0 0 8px 0', fontSize: '1.2rem' }}>
                 Total Items: <strong>{cart.totalItems}</strong> | Subtotal: <strong>{rupees(cart.subtotal)}</strong>
               </p>
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                <Link to="/">
-                  <button type="button" style={{ background: '#f5f5f5', color: 'var(--ink)', borderColor: 'var(--line)' }}>
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                <Link to="/" style={{ textDecoration: 'none' }}>
+                  <button type="button" style={{ background: '#f5f5f5', color: 'var(--ink)', borderColor: 'var(--line)' }} aria-label="Continue shopping in catalogue">
                     Continue Shopping
                   </button>
                 </Link>
                 <button
                   type="button"
-                  onClick={() => alert('Proceeding to checkout (FR-15)...')}
+                  onClick={() => navigate('/checkout')}
                   disabled={cart.items.some((i) => !i.isAvailable)}
+                  aria-label="Proceed to Checkout"
                 >
                   Proceed to Checkout
                 </button>
