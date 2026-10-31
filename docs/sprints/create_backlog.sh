@@ -29,6 +29,7 @@ GH_HARDHICK="hardhickmgowda"
 SPRINT_DRY="Dry run (12-16 Oct)"
 SPRINT_1="Sprint 1 (19-23 Oct)"
 SPRINT_2="Sprint 2 (26-30 Oct)"
+SPRINT_3="Sprint 3 (2-6 Nov)"
 # ----------------------------------------------------------------------------- end settings
 
 GH="${GH_BIN:-gh}"
@@ -126,6 +127,13 @@ NFR-05|NFR|Orders|High|3|Pramod|2|No overselling (atomic stock)|As a buyer and a
 NFR-06|NFR|Seller-Admin|Medium|2|Hardhick|1|Code quality gate (lint + 70 per cent coverage)|As the team, we want lint and test coverage checked on every pull request so that the code stays maintainable.|ESLint passes with zero errors and service modules hold at least 70 per cent unit-test coverage, enforced on every pull request.|GitHub Actions runs lint and tests on each PR; a PR with a lint error or coverage under 70 per cent is blocked; TC-N-06 passes.
 NFR-07|NFR|Catalogue|Low|2|Deeptha|2|Cross-browser support|As a user, I want the site to work in my browser so that I can use whichever browser I like.|The client renders and functions correctly on the latest two versions of Chrome, Edge, Firefox and Safari, verified by a cross-browser regression pass.|Main flows pass in Chrome, Edge, Firefox and Safari; TC-N-07 passes.
 NFR-08|NFR|Accounts|High|3|Koushik|2|Append-only audit log|As an administrator, I want every admin action and payment event logged permanently so that every change can be traced.|Every administrative action and every payment event shall be written to an append-only audit log carrying actor, action, target and timestamp.|Audit entries cannot be edited or deleted through any API; admin and payment events all logged; TC-N-08 passes.
+S3-01|FR|Seller-Admin|High|2|Hardhick|3|Seller listings API|As a seller, I want to see all my listings so that I can manage them from the seller page.|Adds GET /api/v1/seller/listings, needed by the seller page (supports FR-19 and FR-20).|Returns only the logged-in seller's listings with title, condition, price, stock and status; buyers and admins get 403; tests added and passing.
+S3-02|FR|Orders|High|2|Pramod|3|Seller orders API|As a seller, I want to see the order items I have to fulfil so that I can accept, pack and dispatch them.|Adds GET /api/v1/seller/orders, needed by the seller page (supports FR-21).|Returns only the logged-in seller's order items with order number, title, quantity and item status, filterable by status; buyers and admins get 403; tests added and passing.
+S3-03|FR|Seller-Admin|High|5|Hardhick|3|Seller page (listings, fulfilment, dashboard)|As a seller, I want a seller page on the website so that I can do my work without calling the API directly.|Website screens for FR-19 to FR-22: add a listing from an ISBN-13, edit price and stock, accept/pack/dispatch order items, and view the sales dashboard for a date range.|A seller who logs in sees a Seller link; all actions work from the page and show API errors clearly; client build passes.
+S3-04|FR|Seller-Admin|Medium|3|Koushik|3|Admin page (moderation and analytics export)|As an administrator, I want an admin page so that I can moderate content and download reports from the website.|Website screens for FR-23 and FR-24: block and unblock with a reason, and download the monthly analytics export as CSV and PDF.|An admin who logs in sees an Admin link; block/unblock and both downloads work; non-admins cannot open the page; client build passes.
+S3-05|FR|Catalogue|Medium|2|Deeptha|3|Review form on the book page|As a buyer, I want to write a review on the book page so that I can rate a book I received.|Website form for FR-11: rating 1 to 5 and an optional comment, using the existing review endpoint.|A buyer with a delivered copy can post a review and sees the rating update; not-eligible and already-reviewed cases show the API error; client build passes.
+S3-06|TEST|Testing|High|2|Deeptha|3|Update the Test Case Document|As the QA lead, I want the test cases to match what was built so that testing checks the real behaviour.|Part-3 item 1: update the test cases written earlier based on the changes made during the sprints.|Every changed or new behaviour from Sprints 1 to 3 has an updated or new test case; document uploaded to docs/testing.
+S3-07|TEST|Testing|High|3|Deeptha|3|Test reports (unit, system validation, code coverage, branch coverage)|As the QA lead, I want the test reports generated so that the testing results are documented.|Part-3 item 2: complete all testing according to the Test Plan and generate the four reports.|Unit Test Report, System Validation Report, Code Coverage Report and Branch Coverage Report uploaded to docs/testing.
 BACKLOG_EOF
 
 # ----------------------------------------------------------------------------- 0. budget
@@ -145,6 +153,8 @@ mklabel "priority:High"       "b60205" "Must have"
 mklabel "priority:Medium"     "fbca04" "Should have"
 mklabel "priority:Low"        "0e8a16" "Could have"
 mklabel "user-story"          "ededed" "Backlog item derived from the SRS"
+mklabel "TEST"                "0e8a16" "Testing and test reports (Part-3)"
+mklabel "module:Testing"      "c5def5" "Test documents and reports"
 
 # ----------------------------------------------------------------------------- 2. milestones (sprints)
 info "Creating milestones"
@@ -159,7 +169,8 @@ mkmilestone() { # title due description
 }
 mkmilestone "$SPRINT_1" "2026-10-23T18:00:00Z" "Sprint 1: 19-23 Oct 2026. Working product with accounts, catalogue, cart/checkout/payment and seller listing."
 mkmilestone "$SPRINT_2" "2026-10-30T18:00:00Z" "Sprint 2: 26-30 Oct 2026. Remaining features, NFR verification, documentation freeze."
-MS1=$(milestone_number "$SPRINT_1"); MS2=$(milestone_number "$SPRINT_2")
+mkmilestone "$SPRINT_3" "2026-11-06T18:00:00Z" "Sprint 3: 2-6 Nov 2026. Spill-over UI (seller, admin, review form) and Part-3 testing."
+MS1=$(milestone_number "$SPRINT_1"); MS2=$(milestone_number "$SPRINT_2"); MS3=$(milestone_number "$SPRINT_3")
 [ -n "$MS1" ] && [ -n "$MS2" ] || die "Milestones missing. Run the script again."
 
 # ----------------------------------------------------------------------------- 3. project
@@ -196,27 +207,33 @@ ensure_field() { # name type [options]
 }
 load_fields
 ensure_field "Story Points" NUMBER
-ensure_field "Sprint"   SINGLE_SELECT "$SPRINT_DRY,$SPRINT_1,$SPRINT_2"
+ensure_field "Sprint"   SINGLE_SELECT "$SPRINT_DRY,$SPRINT_1,$SPRINT_2,$SPRINT_3"
 ensure_field "Priority" SINGLE_SELECT "High,Medium,Low"
 ensure_field "Module"   SINGLE_SELECT "Accounts,Catalogue,Orders,Seller-Admin"
 
 F_POINTS=$(field_id "Story Points"); F_SPRINT=$(field_id "Sprint"); F_PRIORITY=$(field_id "Priority"); F_MODULE=$(field_id "Module")
 [ -n "$F_POINTS" ] && [ -n "$F_SPRINT" ] && [ -n "$F_PRIORITY" ] && [ -n "$F_MODULE" ] || die "Project fields missing; run the script again."
-O_S1=$(option_id "Sprint" "$SPRINT_1"); O_S2=$(option_id "Sprint" "$SPRINT_2")
+O_S1=$(option_id "Sprint" "$SPRINT_1"); O_S2=$(option_id "Sprint" "$SPRINT_2"); O_S3=$(option_id "Sprint" "$SPRINT_3")
 
 # ----------------------------------------------------------------------------- 4. issues + project items
 info "Reading existing issues (one call)"
 EXISTING=$(run "$GH" api "repos/$REPO/issues?state=all&per_page=100" --paginate \
   --jq '.[] | select(.pull_request|not) | "\(.number)|\(.html_url)|\(.title)"') || EXISTING=""
 
-info "Creating / fixing the 32 backlog issues and adding them to the Project"
+info "Creating / fixing the backlog issues and adding them to the Project (ONLY_SPRINT=${ONLY_SPRINT:-all})"
 TOTAL_POINTS=0; DONE_ITEMS=0
 while IFS='|' read -r ID TYPE MODULE PRIO PTS OWNERKEY SPR TITLE STORY REQ ACC; do
   ID=$(printf '%s' "$ID" | tr -d '\r\n'); [ -z "$ID" ] && continue
+  if [ -n "${ONLY_SPRINT:-}" ] && [ "$SPR" != "$ONLY_SPRINT" ]; then continue; fi
   ACC=$(printf '%s' "$ACC" | tr -d '\r')
   ISSUE_TITLE="[$ID] $TITLE"
   LOGIN=$(member_login "$OWNERKEY"); NAME=$(member_name "$OWNERKEY")
-  if [ "$SPR" = "1" ]; then MS="$MS1"; SPRINT_OPT="$O_S1"; SPRINT_TXT="$SPRINT_1"; else MS="$MS2"; SPRINT_OPT="$O_S2"; SPRINT_TXT="$SPRINT_2"; fi
+  case "$SPR" in
+    1) MS="$MS1"; SPRINT_OPT="$O_S1"; SPRINT_TXT="$SPRINT_1" ;;
+    3) MS="$MS3"; SPRINT_OPT="$O_S3"; SPRINT_TXT="$SPRINT_3"
+       [ -n "$MS3" ] && [ -n "$O_S3" ] || { echo "   ! Sprint 3 milestone or Sprint field option missing"; FAILED="$FAILED $ID(sprint3)"; continue; } ;;
+    *) MS="$MS2"; SPRINT_OPT="$O_S2"; SPRINT_TXT="$SPRINT_2" ;;
+  esac
   BODY=$(printf '**User story**\n%s\n\n**Requirement (SRS v1.1, %s)**\n%s\n\n**Acceptance criteria**\n%s\n\n| Field | Value |\n|---|---|\n| Type | %s |\n| Module | %s |\n| Priority | %s |\n| Story points | %s |\n| Owner | %s |\n| Sprint | %s |\n\n**Definition of done:** code merged through a reviewed pull request, tests for the acceptance criteria pass, and the RTM row is updated.\n' \
     "$STORY" "$ID" "$REQ" "$ACC" "$TYPE" "$MODULE" "$PRIO" "$PTS" "$NAME" "$SPRINT_TXT")
 
@@ -243,7 +260,8 @@ while IFS='|' read -r ID TYPE MODULE PRIO PTS OWNERKEY SPR TITLE STORY REQ ACC; 
   run "$GH" project item-edit --id "$ITEM" --project-id "$PROJECT_ID" --field-id "$F_POINTS"   --number "$PTS" >/dev/null || OK=0; sleep 1
   run "$GH" project item-edit --id "$ITEM" --project-id "$PROJECT_ID" --field-id "$F_SPRINT"   --single-select-option-id "$SPRINT_OPT" >/dev/null || OK=0; sleep 1
   run "$GH" project item-edit --id "$ITEM" --project-id "$PROJECT_ID" --field-id "$F_PRIORITY" --single-select-option-id "$(option_id Priority "$PRIO")" >/dev/null || OK=0; sleep 1
-  run "$GH" project item-edit --id "$ITEM" --project-id "$PROJECT_ID" --field-id "$F_MODULE"   --single-select-option-id "$(option_id Module "$MODULE")" >/dev/null || OK=0; sleep 1
+  MOD_OPT=$(option_id Module "$MODULE")
+  if [ -n "$MOD_OPT" ]; then run "$GH" project item-edit --id "$ITEM" --project-id "$PROJECT_ID" --field-id "$F_MODULE"   --single-select-option-id "$MOD_OPT" >/dev/null || OK=0; sleep 1; fi
   if [ "$OK" = "1" ]; then
     TOTAL_POINTS=$((TOTAL_POINTS + PTS)); DONE_ITEMS=$((DONE_ITEMS + 1))
   else
@@ -254,9 +272,9 @@ done <<< "$BACKLOG"
 rm -f "$ERRF" 2>/dev/null
 echo
 if [ -z "$FAILED" ]; then
-  info "ALL GOOD: $DONE_ITEMS of 32 items complete, $TOTAL_POINTS story points (expected 109)."
+  info "ALL GOOD: $DONE_ITEMS items complete, $TOTAL_POINTS story points (all sprints: 39 items, 128 points; Sprint 3 only: 7 items, 19 points)."
 else
-  info "$DONE_ITEMS of 32 items complete, $TOTAL_POINTS story points (expected 109)."
+  info "$DONE_ITEMS items complete, $TOTAL_POINTS story points (all sprints: 39 items, 128 points; Sprint 3 only: 7 items, 19 points)."
   echo "Needs another run:$FAILED"
   echo "Just run the same command again (it only fixes what is missing)."
 fi
