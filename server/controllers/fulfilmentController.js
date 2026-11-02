@@ -1,4 +1,4 @@
-const fulfilmentService = require('../services/fulfilmentService');
+﻿const fulfilmentService = require('../services/fulfilmentService');
 
 module.exports = {
   accept: async (req, res) => {
@@ -25,6 +25,15 @@ module.exports = {
       req.params.itemId,
       'dispatch',
       req.body
+    );
+    res.json(result);
+  },
+
+  deliver: async (req, res) => {
+    const result = await fulfilmentService.transitionItem(
+      req.user.id,
+      req.params.itemId,
+      'deliver'
     );
     res.json(result);
   },
