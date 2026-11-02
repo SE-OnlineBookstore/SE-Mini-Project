@@ -134,6 +134,9 @@ S3-04|FR|Seller-Admin|Medium|3|Koushik|3|Admin page (moderation and analytics ex
 S3-05|FR|Catalogue|Medium|2|Hardhick|3|Review form on the book page|As a buyer, I want to write a review on the book page so that I can rate a book I received.|Website form for FR-11: rating 1 to 5 and an optional comment, using the existing review endpoint.|A buyer with a delivered copy can post a review and sees the rating update; not-eligible and already-reviewed cases show the API error; client build passes.
 S3-06|TEST|Testing|High|2|Deeptha|3|Update the Test Case Document|As the QA lead, I want the test cases to match what was built so that testing checks the real behaviour.|Part-3 item 1: update the test cases written earlier based on the changes made during the sprints.|Every changed or new behaviour from Sprints 1 to 3 has an updated or new test case; document uploaded to docs/testing.
 S3-07|TEST|Testing|High|3|Deeptha|3|Test reports (unit, system validation, code coverage, branch coverage)|As the QA lead, I want the test reports generated so that the testing results are documented.|Part-3 item 2: complete all testing according to the Test Plan and generate the four reports.|Unit Test Report, System Validation Report, Code Coverage Report and Branch Coverage Report uploaded to docs/testing.
+S3-08|FR|Seller-Admin|High|2|Hardhick|3|Mark order items delivered|As a seller, I want to mark a shipped item as delivered so that the buyer can review it or request a return.|Adds POST /api/v1/seller/fulfilment/:itemId/deliver (SHIPPED to DELIVERED) and sets the order to DELIVERED when all its items are delivered. Nothing in the app reaches DELIVERED today, so returns (FR-18) and reviews (FR-11) cannot happen. Related: FR-21, FR-18, FR-11.|Only the item's seller can mark it delivered, and only from SHIPPED; the order becomes DELIVERED with a status history entry when all items are delivered; the buyer is notified; tests added and passing.
+S3-09|FR|Orders|Medium|2|Pramod|3|My orders page|As a buyer, I want a list of my orders so that I can track, cancel, return or download the invoice later.|Website page for FR-17 and FR-18 using the existing GET /api/v1/orders: lists the buyer's orders with number, date, total and status, each linking to the order page, plus an Orders link in the header.|A buyer sees all their own orders, newest first, and can open each one; other users' orders never appear; client build passes.
+S3-10|FR|Accounts|Medium|2|Koushik|3|Profile and address book page|As a buyer, I want to edit my profile and manage my saved addresses so that my details stay correct.|Website page for FR-05 using the existing /api/v1/users/me endpoints: edit name and phone, and add, edit, delete and set a default delivery address.|Changes save and show API validation errors; addresses edited here appear at checkout; client build passes.
 BACKLOG_EOF
 
 # ----------------------------------------------------------------------------- 0. budget
@@ -272,9 +275,9 @@ done <<< "$BACKLOG"
 rm -f "$ERRF" 2>/dev/null
 echo
 if [ -z "$FAILED" ]; then
-  info "ALL GOOD: $DONE_ITEMS items complete, $TOTAL_POINTS story points (all sprints: 39 items, 128 points; Sprint 3 only: 7 items, 19 points)."
+  info "ALL GOOD: $DONE_ITEMS items complete, $TOTAL_POINTS story points (all sprints: 42 items, 134 points; Sprint 3 only: 10 items, 25 points)."
 else
-  info "$DONE_ITEMS items complete, $TOTAL_POINTS story points (all sprints: 39 items, 128 points; Sprint 3 only: 7 items, 19 points)."
+  info "$DONE_ITEMS items complete, $TOTAL_POINTS story points (all sprints: 42 items, 134 points; Sprint 3 only: 10 items, 25 points)."
   echo "Needs another run:$FAILED"
   echo "Just run the same command again (it only fixes what is missing)."
 fi
