@@ -81,6 +81,20 @@ Tracking number: ${trackingNo}
 Thank you for shopping with Online Bookstore.`,
   }),
 
+ORDER_DELIVERED: ({ name, orderNo, itemTitle }) => ({
+  subject: `Order ${orderNo} delivered`,
+  text: `Hi ${name},
+
+Your order item "${itemTitle}" has been marked as delivered.
+
+Order number: ${orderNo}
+
+You can now review the delivered book or request a return, subject to the return policy.
+
+Thank you for shopping with Online Bookstore.`,
+}),
+
+
   ORDER_INVOICE: ({ name, orderNo, totalAmount }) => ({
     subject: `Tax invoice for order ${orderNo}`,
     text: `Hi ${name},

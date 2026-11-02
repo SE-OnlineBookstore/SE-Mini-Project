@@ -1,13 +1,16 @@
 
+const mongoose = require('mongoose');
 const request = require('supertest');
 const db = require('../helpers/db');
 const { makeUser, login } = require('../helpers/factory');
 const createApp = require('../../app');
+
 const {
   Order,
   OrderItem,
   Shipment,
   Address,
+  Notification,
 } = require('../../models');
 
 const app = createApp();
@@ -48,7 +51,7 @@ async function setupOrder() {
 
   orderItem = await OrderItem.create({
     order_id: order._id,
-    listing_id: new (require('mongoose').Types.ObjectId)(),
+    listing_id: new mongoose.Types.ObjectId(),
     seller_id: seller._id,
     title: 'Test Book',
     quantity: 1,
@@ -81,13 +84,13 @@ beforeEach(async () => {
 afterEach(db.clear);
 afterAll(db.stop);
 
-describe('Seller order fulfilment (Issue #21)', () => {
+describe('Seller order fulfilment (Issue #21, S3-08)', () => {
   const endpoint = (itemId, action) =>
     `/api/v1/seller/fulfilment/${itemId}/${action}`;
 
   it('requires seller authentication', async () => {
     const res = await request(app).post(
-      endpoint(orderItem._id, 'accept')
+      endpoint(orderItem._id, 'accept'),
     );
 
     expect(res.status).toBe(401);
@@ -196,7 +199,163 @@ describe('Seller order fulfilment (Issue #21)', () => {
 
     expect(secondAttempt.status).toBe(409);
     expect(secondAttempt.body.error.code).toBe(
-      'INVALID_STATUS_TRANSITION'
+      'INVALID_STATUS_TRANSITION',
     );
+  });
+
+  // S3-08: Mark shipped item as delivered.
+
+  it('rejects delivery before an item is shipped', async () => {
+    const res = await request(app)
+      .post(endpoint(orderItem._id, 'deliver'))
+      .set(sellerAuth);
+
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('INVALID_STATUS_TRANSITION');
+
+    const savedItem = await OrderItem.findById(orderItem._id);
+
+    expect(savedItem.item_status).toBe('PLACED');
+    expect(savedItem.delivered_at).toBeUndefined();
+  });
+
+  it('marks a shipped item as delivered and notifies the buyer', async () => {
+    await request(app)
+      .post(endpoint(orderItem._id, 'accept'))
+      .set(sellerAuth);
+
+    await request(app)
+      .post(endpoint(orderItem._id, 'pack'))
+      .set(sellerAuth);
+
+    await request(app)
+      .post(endpoint(orderItem._id, 'dispatch'))
+      .set(sellerAuth)
+      .send({
+        courier: 'Test Courier',
+        trackingNo: 'TRACK-DELIVER-01',
+      });
+
+    const delivered = await request(app)
+      .post(endpoint(orderItem._id, 'deliver'))
+      .set(sellerAuth);
+
+    expect(delivered.status).toBe(200);
+    expect(delivered.body.item.status).toBe('DELIVERED');
+
+    const savedItem = await OrderItem.findById(orderItem._id);
+
+    expect(savedItem.item_status).toBe('DELIVERED');
+    expect(savedItem.delivered_at).toBeInstanceOf(Date);
+
+    const savedOrder = await Order.findById(order._id);
+
+    expect(savedOrder.order_status).toBe('DELIVERED');
+
+    expect(
+      savedOrder.status_history.some(
+        (entry) => entry.status === 'DELIVERED',
+      ),
+    ).toBe(true);
+
+    const notification = await Notification.findOne({
+      user_id: buyer._id,
+      type: 'ORDER_DELIVERED',
+    });
+
+    expect(notification).not.toBeNull();
+    expect(notification.subject).toContain(order.order_no);
+
+    const secondAttempt = await request(app)
+      .post(endpoint(orderItem._id, 'deliver'))
+      .set(sellerAuth);
+
+    expect(secondAttempt.status).toBe(409);
+    expect(secondAttempt.body.error.code).toBe(
+      'INVALID_STATUS_TRANSITION',
+    );
+  });
+
+  it('does not allow another seller to deliver this item', async () => {
+    const res = await request(app)
+      .post(endpoint(orderItem._id, 'deliver'))
+      .set(otherSellerAuth);
+
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('ORDER_ITEM_NOT_FOUND');
+  });
+
+  it('marks the overall order delivered only after every item is delivered', async () => {
+    const secondItem = await OrderItem.create({
+      order_id: order._id,
+      listing_id: new mongoose.Types.ObjectId(),
+      seller_id: seller._id,
+      title: 'Second Test Book',
+      quantity: 1,
+      unit_price: 30000,
+      item_status: 'PLACED',
+    });
+
+    const items = [orderItem, secondItem];
+
+    for (const item of items) {
+      const res = await request(app)
+        .post(endpoint(item._id, 'accept'))
+        .set(sellerAuth);
+
+      expect(res.status).toBe(200);
+    }
+
+    for (const item of items) {
+      const res = await request(app)
+        .post(endpoint(item._id, 'pack'))
+        .set(sellerAuth);
+
+      expect(res.status).toBe(200);
+    }
+
+    for (const [index, item] of items.entries()) {
+      const res = await request(app)
+        .post(endpoint(item._id, 'dispatch'))
+        .set(sellerAuth)
+        .send({
+          courier: 'Test Courier',
+          trackingNo: `TRACK-MULTI-${index + 1}`,
+        });
+
+      expect(res.status).toBe(200);
+    }
+
+    const firstDelivery = await request(app)
+      .post(endpoint(orderItem._id, 'deliver'))
+      .set(sellerAuth);
+
+    expect(firstDelivery.status).toBe(200);
+
+    let savedOrder = await Order.findById(order._id);
+
+    expect(savedOrder.order_status).toBe('SHIPPED');
+
+    const secondDelivery = await request(app)
+      .post(endpoint(secondItem._id, 'deliver'))
+      .set(sellerAuth);
+
+    expect(secondDelivery.status).toBe(200);
+
+    savedOrder = await Order.findById(order._id);
+
+    expect(savedOrder.order_status).toBe('DELIVERED');
+
+    expect(
+      savedOrder.status_history.some(
+        (entry) => entry.status === 'DELIVERED',
+      ),
+    ).toBe(true);
+
+    const savedFirstItem = await OrderItem.findById(orderItem._id);
+    const savedSecondItem = await OrderItem.findById(secondItem._id);
+
+    expect(savedFirstItem.delivered_at).toBeInstanceOf(Date);
+    expect(savedSecondItem.delivered_at).toBeInstanceOf(Date);
   });
 });

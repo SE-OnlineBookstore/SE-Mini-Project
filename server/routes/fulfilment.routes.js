@@ -26,5 +26,10 @@ router.post(
   validate(orderSchema.dispatch),
   h(controller.dispatch)
 );
+router.post(
+  '/:itemId/deliver',
+  validate(orderSchema.fulfilmentItemId),
+  h(controller.deliver)
+);
 
 module.exports = router;

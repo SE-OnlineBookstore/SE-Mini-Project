@@ -26,7 +26,7 @@ This matrix maps SRS v1.1 requirements to architecture components, design specif
 | 18 | **FR-18** | **Order tracking, cancellation and return lifecycle** | **Cart & Order Service** | **SAD 3.4, 5.3** | `server/services/orderService.js`, `server/routes/order.routes.js`, `client/src/pages/OrderDetail.jsx` | **TC-O-06** | **STC-09** | **CLOSED (PASS)** | **Pramod** |
 | 19 | FR-19 | Create listing from ISBN-13 with catalogue auto-fill | Seller & Admin Service | SAD 3.4, 4.3 | `server/services/listingService.js` | TC-S-01 | STC-10 | PASS | Hardhick |
 | 20 | FR-20 | Stock and price management with low-stock alerts | Seller & Admin Service | SAD 3.4, 4.3 | `server/services/listingService.js` | TC-S-02 | STC-10 | PASS | Hardhick |
-| 21 | FR-21 | Order fulfilment, packaging and courier dispatch | Seller & Admin Service | SAD 3.4, 4.3 | `server/services/fulfilmentService.js` | TC-S-03 | STC-11 | PASS | Hardhick |
+| 21 | FR-21 | Order fulfilment, packaging, courier dispatch and delivery confirmation | Seller & Admin Service | SAD 3.4, 4.3 | `server/routes/fulfilment.routes.js`, `server/controllers/fulfilmentController.js`, `server/services/fulfilmentService.js`, `server/services/notificationService.js` | TC-S-03 | STC-11 | PASS | Hardhick |
 | 22 | FR-22 | Seller sales dashboard with settlement summary | Seller & Admin Service | SAD 3.4, 4.3 | `server/services/sellerService.js` | TC-S-04 | STC-11 | PASS | Hardhick |
 | 23 | FR-23 | Administrator moderation and audit logging | Seller & Admin Service | SAD 3.4, 3.9 | `server/services/adminService.js` | TC-S-05 | STC-12 | PASS | Hardhick |
 | 24 | **FR-24** | **Monthly platform analytics export (CSV & PDF)** | **Seller & Admin Service** | **SAD 3.4, 4.3** | `server/services/analyticsService.js`, `server/controllers/analyticsController.js`, `server/routes/analytics.routes.js` | **TC-S-06** | **STC-12** | **PASS** | **Hardhick** |
@@ -103,3 +103,18 @@ This matrix maps SRS v1.1 requirements to architecture components, design specif
   - The second concurrent order fails stock reservation, remains in `PLACED` state, and initiates `REFUND_PENDING` without overselling.
   - Inventory quantity is guaranteed never to go below 0 (final `stock_qty: 0`, status transitioned to `OUT_OF_STOCK`).
   - Cancellation of unfulfilled orders restores inventory stock atomically (BR-11).
+
+---
+
+### Verification Summary for S3-08 (Mark Shipped Order Item as Delivered)
+
+- **Status:** PASS
+- **API Tests:** `server/tests/api/fulfilment.api.test.js` (11 passed)
+- **Full Server Test Suite:** 221 tests across 29 suites passed.
+- **Acceptance Criteria Verification:**
+  - Only the seller who owns an order item can mark it as delivered.
+  - Delivery is rejected unless the item is currently in the `SHIPPED` state.
+  - Successful delivery updates the item status to `DELIVERED` and records `delivered_at`.
+  - The buyer receives an `ORDER_DELIVERED` notification.
+  - The parent order changes to `DELIVERED` only after all its order items have been delivered.
+  - Automated tests verify rejection of premature delivery, repeat delivery, and delivery attempts by another seller.
