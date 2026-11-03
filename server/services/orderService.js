@@ -1,4 +1,5 @@
 // Checkout and order management (FR-15, FR-18; TC-O-03, TC-O-06).
+const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const OrderItem = require('../models/OrderItem');
 const Cart = require('../models/Cart');
@@ -470,7 +471,47 @@ async function returnOrder(buyerId, orderId, { reason } = {}) {
   };
 }
 
+// S3-02: Retrieve order items for the logged-in seller, optionally filtered by status.
+async function getSellerOrders(sellerId, { status } = {}) {
+  if (!mongoose.isValidObjectId(sellerId)) {
+    throw E.badRequest('SELLER_INVALID', 'The seller account is invalid.');
+  }
+
+  const query = { seller_id: sellerId };
+  if (status && typeof status === 'string' && status.trim() !== '') {
+    query.item_status = status.trim().toUpperCase();
+  }
+
+  const items = await OrderItem.find(query)
+    .populate({
+      path: 'order_id',
+      select: 'order_no created_at order_status',
+    })
+    .sort({ _id: -1 })
+    .lean();
+
+  const formatted = items.map((item) => ({
+    id: String(item._id),
+    orderId: String(item.order_id?._id || item.order_id || ''),
+    orderNumber: item.order_id?.order_no ?? null,
+    orderNo: item.order_id?.order_no ?? null,
+    title: item.title,
+    quantity: item.quantity,
+    unitPrice: item.unit_price,
+    price: item.unit_price,
+    itemStatus: item.item_status,
+    status: item.item_status,
+    createdAt: item.order_id?.created_at ?? null,
+  }));
+
+  return {
+    orders: formatted,
+    items: formatted,
+  };
+}
+
 module.exports = {
+  getSellerOrders,
   validateAndComputeTotals,
   getCheckoutSummary,
   createOrder,

@@ -2,6 +2,11 @@ const orderService = require('../services/orderService');
 const invoiceService = require('../services/invoiceService');
 
 module.exports = {
+  // S3-02: Retrieve order items for the logged-in seller.
+  getSellerOrders: async (req, res) => {
+    const result = await orderService.getSellerOrders(req.user.id, req.query);
+    res.status(200).json(result);
+  },
   checkoutSummary: async (req, res) => res.json(await orderService.getCheckoutSummary(req.user.id, req.body)),
   createOrder: async (req, res) => res.status(201).json(await orderService.createOrder(req.user.id, req.body)),
   listOrders: async (req, res) => res.json(await orderService.listOrders(req.user.id)),
