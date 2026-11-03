@@ -25,13 +25,17 @@ export function AuthProvider({ children }) {
     setUser(data.user);
     return data.user;
   };
+
+  const updateUser = (changes) => {
+  setUser((current) => current ? { ...current, ...changes } : current);
+  };
+
   const logout = async () => {
     await api.post('/auth/logout').catch(() => {});
     setAccessToken(null);
     setUser(null);
   };
 
-  return <AuthContext.Provider value={{ user, ready, login, logout }}>{children}</AuthContext.Provider>;
+  return (<AuthContext.Provider value={{ user, ready, login, logout, updateUser }}>{children}</AuthContext.Provider>);
 }
-
 export const useAuth = () => useContext(AuthContext);
