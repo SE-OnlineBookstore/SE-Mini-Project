@@ -268,3 +268,77 @@ describe('Issue #20 seller stock and price management', () => {
     expect(notification.subject).toContain('Low stock alert');
   });
 });
+
+describe('S3-01 seller listings retrieval API', () => {
+  it('returns only the logged-in seller listings with book details', async () => {
+    const book = await makeBook();
+
+    // Create one listing for the logged-in seller.
+    const ownListing = await Listing.create({
+      book_id: book._id,
+      seller_id: seller._id,
+      condition: 'GOOD',
+      price: 25000,
+      stock_qty: 6,
+      status: 'ACTIVE',
+    });
+
+    // Create another listing for a different seller.
+    const otherSeller = await makeUser('SELLER');
+
+    await Listing.create({
+      book_id: book._id,
+      seller_id: otherSeller._id,
+      condition: 'NEW',
+      price: 40000,
+      stock_qty: 10,
+      status: 'ACTIVE',
+    });
+
+    const res = await request(app)
+      .get('/api/v1/seller/listings')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.listings).toHaveLength(1);
+
+    expect(res.body.listings[0]).toMatchObject({
+      id: String(ownListing._id),
+      title: book.title,
+      condition: 'GOOD',
+      price: 25000,
+      stockQty: 6,
+      status: 'ACTIVE',
+    });
+  });
+
+  it('requires seller authentication', async () => {
+    const res = await request(app)
+      .get('/api/v1/seller/listings');
+
+    expect(res.status).toBe(401);
+  });
+
+  it.each(['BUYER', 'ADMIN'])(
+    'rejects %s users with 403',
+    async (role) => {
+      const user = await makeUser(role);
+      const auth = await login(app, user);
+
+      const res = await request(app)
+        .get('/api/v1/seller/listings')
+        .set('Authorization', `Bearer ${auth.token}`);
+
+      expect(res.status).toBe(403);
+    }
+  );
+
+  it('returns an empty array when the seller has no listings', async () => {
+    const res = await request(app)
+      .get('/api/v1/seller/listings')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.listings).toEqual([]);
+  });
+});

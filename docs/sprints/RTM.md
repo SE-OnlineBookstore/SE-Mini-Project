@@ -24,8 +24,8 @@ This matrix maps SRS v1.1 requirements to architecture components, design specif
 | 16 | FR-16 | Online payment sandbox, retry limit & signed HMAC webhook | Cart & Order Service | SAD 3.4, 4.2.2 | `server/services/paymentService.js`, `client/src/pages/OrderDetail.jsx` | TC-O-04 | STC-08 | PASS | Pramod |
 | 17 | **FR-17** | **PDF invoice on confirmation, downloadable and e-mailed** | **Cart & Order Service, Notification** | **SAD 3.4, 3.8, 5.3** | `server/services/invoiceService.js`, `server/routes/order.routes.js`, `client/src/pages/OrderDetail.jsx`, `server/services/paymentService.js` | **TC-O-05** | **STC-09** | **CLOSED (PASS)** | **Pramod** |
 | 18 | **FR-18** | **Order tracking, cancellation and return lifecycle** | **Cart & Order Service** | **SAD 3.4, 5.3** | `server/services/orderService.js`, `server/routes/order.routes.js`, `client/src/pages/OrderDetail.jsx` | **TC-O-06** | **STC-09** | **CLOSED (PASS)** | **Pramod** |
-| 19 | FR-19 | Create listing from ISBN-13 with catalogue auto-fill | Seller & Admin Service | SAD 3.4, 4.3 | `server/services/listingService.js` | TC-S-01 | STC-10 | PASS | Hardhick |
-| 20 | FR-20 | Stock and price management with low-stock alerts | Seller & Admin Service | SAD 3.4, 4.3 | `server/services/listingService.js` | TC-S-02 | STC-10 | PASS | Hardhick |
+| 19 | FR-19 | Create listing from ISBN-13 with catalogue auto-fill | Seller & Admin Service | SAD 3.4, 4.3 | `server/routes/listing.routes.js`, `server/controllers/listingController.js`, `server/services/listingService.js`, `server/tests/api/listing.api.test.js` | TC-S-01 | STC-10 | PASS | Hardhick |
+| 20 | FR-20 | Stock and price management with low-stock alerts | Seller & Admin Service | SAD 3.4, 4.3 | `server/routes/listing.routes.js`, `server/controllers/listingController.js`, `server/services/listingService.js`, `server/tests/api/listing.api.test.js` | TC-S-02 | STC-10 | PASS | Hardhick |
 | 21 | FR-21 | Order fulfilment, packaging, courier dispatch and delivery confirmation | Seller & Admin Service | SAD 3.4, 4.3 | `server/routes/fulfilment.routes.js`, `server/controllers/fulfilmentController.js`, `server/services/fulfilmentService.js`, `server/services/notificationService.js` | TC-S-03 | STC-11 | PASS | Hardhick |
 | 22 | FR-22 | Seller sales dashboard with settlement summary | Seller & Admin Service | SAD 3.4, 4.3 | `server/services/sellerService.js` | TC-S-04 | STC-11 | PASS | Hardhick |
 | 23 | FR-23 | Administrator moderation and audit logging | Seller & Admin Service | SAD 3.4, 3.9 | `server/services/adminService.js` | TC-S-05 | STC-12 | PASS | Hardhick |
@@ -118,3 +118,19 @@ This matrix maps SRS v1.1 requirements to architecture components, design specif
   - The buyer receives an `ORDER_DELIVERED` notification.
   - The parent order changes to `DELIVERED` only after all its order items have been delivered.
   - Automated tests verify rejection of premature delivery, repeat delivery, and delivery attempts by another seller.
+
+---
+
+### Verification Summary for S3-01 (Seller Listings API)
+
+- **Status:** PASS
+- **API Tests:** `server/tests/api/listing.api.test.js`
+- **Full Server Test Suite:** Passed.
+- **Lint:** Passed.
+- **Acceptance Criteria Verification:**
+  - Sellers can retrieve all their own listings.
+  - Response includes title, condition, price, stock and status.
+  - Listings belonging to other sellers are not exposed.
+  - Unauthenticated requests are rejected with HTTP 401.
+  - Buyer and administrator requests are rejected with HTTP 403.
+  - Sellers with no listings receive an empty array.

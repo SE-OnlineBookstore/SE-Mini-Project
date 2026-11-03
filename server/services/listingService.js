@@ -138,4 +138,40 @@ if (input.stock_qty !== undefined) {
   };
 }
 
-module.exports = { createListing, updateListing };
+// S3-01: Retrieve all listings belonging to one seller.
+async function getSellerListings(sellerId) {
+  if (!mongoose.isValidObjectId(sellerId)) {
+    throw E.badRequest(
+      'SELLER_INVALID',
+      'The seller account is invalid.'
+    );
+  }
+
+  const listings = await Listing.find({
+    seller_id: sellerId,
+  })
+    .populate({
+      path: 'book_id',
+      select: 'title',
+    })
+    .sort({ created_at: -1 })
+    .lean();
+
+  return {
+    listings: listings.map((listing) => ({
+      id: String(listing._id),
+      title: listing.book_id?.title ?? null,
+      condition: listing.condition,
+      price: listing.price,
+      stockQty: listing.stock_qty,
+      status: listing.status,
+    })),
+  };
+}
+
+
+module.exports = {
+  createListing,
+  updateListing,
+  getSellerListings,
+};
