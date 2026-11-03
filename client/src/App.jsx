@@ -10,6 +10,7 @@ import Wishlist from './pages/Wishlist';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import OrderDetail from './pages/OrderDetail';
+import Profile from './pages/Profile';
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
           <Route path="/books/:id" element={<BookDetail />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/wishlist" element={<Wishlist />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/orders/:id" element={<OrderDetail />} />
           <Route path="/login" element={<Login />} />

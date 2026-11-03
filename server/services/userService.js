@@ -31,18 +31,32 @@ async function addAddress(userId, dto) {
   return address.toPublic();
 }
 
+
 async function updateAddress(userId, id, dto) {
   const address = await Address.findOne({ _id: id, user_id: userId });
-  if (!address) throw E.notFound('ADDRESS_NOT_FOUND', 'Address not found.');
-  const { isDefault, ...fields } = dto;
-  if (isDefault === true) {
-    await Address.updateMany({ user_id: userId, _id: { $ne: id } }, { $set: { is_default: false } });
-    address.is_default = true;
+
+  if (!address) {
+    throw E.notFound('ADDRESS_NOT_FOUND', 'Address not found.');
   }
+
+  const { isDefault, ...fields } = dto;
+
+  if (isDefault === true) {
+    await Address.updateMany(
+      { user_id: userId, _id: { $ne: id } },
+      { $set: { is_default: false } },
+    );
+    address.is_default = true;
+  } else if (isDefault === false) {
+    address.is_default = false;
+  }
+
   Object.assign(address, fields);
   await address.save();
+
   return address.toPublic();
 }
+
 
 async function deleteAddress(userId, id) {
   const address = await Address.findOne({ _id: id, user_id: userId });
