@@ -1,3 +1,4 @@
+
 const mongoose = require('mongoose');
 const Book = require('../models/Book');
 const Listing = require('../models/Listing');
@@ -14,12 +15,22 @@ async function createListing(sellerId, input) {
     throw E.badRequest('ISBN_INVALID', 'That is not a valid ISBN-13.');
   }
 
-  const book = await Book.findOne({ isbn13: isbn }).select('_id').lean();
+  const book = await Book.findOne({ isbn13: isbn })
+    .select('_id mrp')
+    .lean();
 
   if (!book) {
     throw E.notFound(
       'BOOK_NOT_FOUND',
       'No catalogue entry for this ISBN. Enter the book details manually.',
+    );
+  }
+
+  // DEF-01: Listing price cannot exceed catalogue MRP.
+  if (book.mrp != null && input.price > book.mrp) {
+    throw E.badRequest(
+      'PRICE_ABOVE_MRP',
+      'Listing price cannot exceed the book MRP.',
     );
   }
 
@@ -73,7 +84,10 @@ async function updateListing(sellerId, listingId, input) {
     .lean();
 
   if (!book) {
-    throw E.notFound('BOOK_NOT_FOUND', 'The book for this listing was not found.');
+    throw E.notFound(
+      'BOOK_NOT_FOUND',
+      'The book for this listing was not found.',
+    );
   }
 
   if (input.price !== undefined) {
@@ -89,17 +103,17 @@ async function updateListing(sellerId, listingId, input) {
 
   const previousStock = listing.stock_qty;
 
-if (input.stock_qty !== undefined) {
-  listing.stock_qty = input.stock_qty;
+  if (input.stock_qty !== undefined) {
+    listing.stock_qty = input.stock_qty;
 
-  if (listing.status !== 'BLOCKED') {
-    if (input.stock_qty === 0) {
-      listing.status = 'OUT_OF_STOCK';
-    } else if (listing.status === 'OUT_OF_STOCK') {
-      listing.status = 'ACTIVE';
+    if (listing.status !== 'BLOCKED') {
+      if (input.stock_qty === 0) {
+        listing.status = 'OUT_OF_STOCK';
+      } else if (listing.status === 'OUT_OF_STOCK') {
+        listing.status = 'ACTIVE';
+      }
     }
   }
-}
 
   await listing.save();
   await catalogueService.refreshBookStats(listing.book_id);
@@ -143,7 +157,7 @@ async function getSellerListings(sellerId) {
   if (!mongoose.isValidObjectId(sellerId)) {
     throw E.badRequest(
       'SELLER_INVALID',
-      'The seller account is invalid.'
+      'The seller account is invalid.',
     );
   }
 
@@ -168,7 +182,6 @@ async function getSellerListings(sellerId) {
     })),
   };
 }
-
 
 module.exports = {
   createListing,
