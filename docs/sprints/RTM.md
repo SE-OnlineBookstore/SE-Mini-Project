@@ -16,7 +16,7 @@ This matrix maps SRS v1.1 requirements to architecture components, design specif
 | 8 | FR-08 | Keyword search with compound text index | Catalogue Service | SAD 3.4, 4.3 | `server/services/catalogueService.js` | TC-C-02 | STC-04 | PASS | Deeptha |
 | 9 | FR-09 | Multi-facet filtering and sorting | Catalogue Service | SAD 3.4, 4.3 | `server/services/catalogueService.js` | TC-C-03 | STC-05 | PASS | Deeptha |
 | 10 | FR-10 | Book detail with active offers and conditions | Catalogue Service | SAD 3.4, 4.3 | `server/services/catalogueService.js` | TC-C-04 | STC-05 | PASS | Deeptha |
-| 11 | FR-11 | Verified-purchase rating and reviews | Catalogue Service | SAD 3.4, 4.3 | `server/services/reviewService.js` | TC-C-05 | STC-06 | PASS | Deeptha |
+| 11 | FR-11 | Verified-purchase rating and reviews | Catalogue Service | SAD 3.4, 4.3 | `server/services/reviewService.js`, `client/src/components/ReviewForm.jsx`, `client/src/pages/BookDetail.jsx` | TC-C-05 | STC-06 | PASS | Deeptha / Hardhick |
 | 12 | FR-12 | Related titles recommendations (author & category) | Catalogue Service | SAD 3.4, 4.3 | `server/services/catalogueService.js` | TC-C-06 | STC-06 | PASS | Deeptha |
 | 13 | FR-13 | Shopping cart with quantity limits and persistence | Cart & Order Service | SAD 3.4, 5.3 | `server/services/cartService.js`, `client/src/pages/Cart.jsx` | TC-O-01 | STC-07 | PASS | Pramod |
 | 14 | FR-14 | Wishlist with single-action move-to-cart | Cart & Order Service | SAD 3.4, 5.3 | `server/services/wishlistService.js` | TC-O-02 | STC-07 | PASS | Pramod |

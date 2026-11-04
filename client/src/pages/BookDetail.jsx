@@ -1,8 +1,9 @@
-// FR-10, FR-12, FR-13 and FR-14: offers by ascending price, related titles, add to cart, save to wishlist.
+// FR-10, FR-11, FR-12, FR-13 and FR-14: offers by ascending price, related titles, add to cart, save to wishlist.
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api, { readError, rupees } from '../api/client';
+import ReviewForm from '../components/ReviewForm';
 
 export default function BookDetail() {
   const { id } = useParams();
@@ -101,6 +102,11 @@ export default function BookDetail() {
     }
   };
 
+  // FR-11: show the new average straight away from the review response.
+  const handleReviewPosted = (r) => {
+    setData((prev) => (prev ? { ...prev, book: { ...prev.book, avgRating: r.avgRating, reviewCount: r.reviewCount } } : prev));
+  };
+
   if (error) return <main className="page"><p className="error" role="alert">{error}</p></main>;
   if (!data) return <main className="page"><p className="muted">Loading…</p></main>;
   const { book, offers } = data;
@@ -174,6 +180,14 @@ export default function BookDetail() {
             })}
           </tbody>
         </table>
+      )}
+
+      {user && user.role === 'BUYER' ? (
+        <ReviewForm bookId={id} onPosted={handleReviewPosted} />
+      ) : (
+        <p className="muted" style={{ marginTop: '36px' }}>
+          {user ? 'Only buyer accounts can write reviews.' : <><Link to="/login">Log in</Link> as a buyer to write a review.</>}
+        </p>
       )}
 
       {related && related.length > 0 && (
