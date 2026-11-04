@@ -379,6 +379,22 @@ paths:
         '400': { $ref: '#/components/responses/Error' }
         '401': { $ref: '#/components/responses/Error' }
         '404': { $ref: '#/components/responses/Error' }
+  /seller/orders:
+    get:
+      security: [{ bearer: [] }]
+      summary: Get order items to fulfil for the logged-in seller (S3-02)
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional filter by item status (e.g. PLACED, CONFIRMED, PACKED, SHIPPED, DELIVERED)
+      responses:
+        '200':
+          description: List of order items belonging to the seller
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
   /payments/order/{orderId}:
     parameters: [{ name: orderId, in: path, required: true, schema: { type: string } }]
     get:

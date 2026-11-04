@@ -26,7 +26,7 @@ This matrix maps SRS v1.1 requirements to architecture components, design specif
 | 18 | **FR-18** | **Order tracking, cancellation and return lifecycle** | **Cart & Order Service** | **SAD 3.4, 5.3** | `server/services/orderService.js`, `server/routes/order.routes.js`, `client/src/pages/OrderDetail.jsx` | **TC-O-06** | **STC-09** | **CLOSED (PASS)** | **Pramod** |
 | 19 | FR-19 | Create listing from ISBN-13 with catalogue auto-fill | Seller & Admin Service | SAD 3.4, 4.3 | `server/routes/listing.routes.js`, `server/controllers/listingController.js`, `server/services/listingService.js`, `server/tests/api/listing.api.test.js` | TC-S-01 | STC-10 | PASS | Hardhick |
 | 20 | FR-20 | Stock and price management with low-stock alerts | Seller & Admin Service | SAD 3.4, 4.3 | `server/routes/listing.routes.js`, `server/controllers/listingController.js`, `server/services/listingService.js`, `server/tests/api/listing.api.test.js` | TC-S-02 | STC-10 | PASS | Hardhick |
-| 21 | FR-21 | Order fulfilment, packaging, courier dispatch and delivery confirmation | Seller & Admin Service | SAD 3.4, 4.3 | `server/routes/fulfilment.routes.js`, `server/controllers/fulfilmentController.js`, `server/services/fulfilmentService.js`, `server/services/notificationService.js` | TC-S-03 | STC-11 | PASS | Hardhick |
+| 21 | FR-21 | Order fulfilment, packaging, courier dispatch and delivery confirmation | Seller & Admin Service / Orders | SAD 3.4, 4.3 | `server/routes/fulfilment.routes.js`, `server/routes/sellerDashboard.routes.js`, `server/controllers/fulfilmentController.js`, `server/controllers/orderController.js`, `server/services/fulfilmentService.js`, `server/services/orderService.js`, `server/tests/api/sellerOrders.api.test.js` | TC-S-03 | STC-11 | PASS | Hardhick / Pramod |
 | 22 | FR-22 | Seller sales dashboard with settlement summary | Seller & Admin Service | SAD 3.4, 4.3 | `server/services/sellerService.js` | TC-S-04 | STC-11 | PASS | Hardhick |
 | 23 | FR-23 | Administrator moderation and audit logging | Seller & Admin Service | SAD 3.4, 3.9 | `server/services/adminService.js` | TC-S-05 | STC-12 | PASS | Hardhick |
 | 24 | **FR-24** | **Monthly platform analytics export (CSV & PDF)** | **Seller & Admin Service** | **SAD 3.4, 4.3** | `server/services/analyticsService.js`, `server/controllers/analyticsController.js`, `server/routes/analytics.routes.js` | **TC-S-06** | **STC-12** | **PASS** | **Hardhick** |
@@ -134,3 +134,21 @@ This matrix maps SRS v1.1 requirements to architecture components, design specif
   - Unauthenticated requests are rejected with HTTP 401.
   - Buyer and administrator requests are rejected with HTTP 403.
   - Sellers with no listings receive an empty array.
+
+---
+
+### Verification Summary for S3-02 (Seller Orders API)
+
+- **Status:** PASS
+- **API Tests:** `server/tests/api/sellerOrders.api.test.js`
+- **Full Server Test Suite:** Passed.
+- **Lint:** Passed.
+- **Acceptance Criteria Verification:**
+  - Returns only the logged-in seller's order items.
+  - Response includes order number, title, quantity, and item status.
+  - Supports filtering by status through query parameter (`?status=...`).
+  - Status filter operates case-insensitively (e.g. `placed`, `CONFIRMED`, `shipped`).
+  - Order items belonging to other sellers are strictly excluded.
+  - Unauthenticated requests are rejected with HTTP 401.
+  - Buyer and administrator requests are rejected with HTTP 403.
+  - Sellers with no order items receive an empty list.
