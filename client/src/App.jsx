@@ -10,6 +10,7 @@ import Wishlist from './pages/Wishlist';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import OrderDetail from './pages/OrderDetail';
+import Seller from './pages/Seller';
 import Profile from './pages/Profile';
 
 export default function App() {
@@ -26,6 +27,7 @@ export default function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/orders/:id" element={<OrderDetail />} />
+          <Route path="/seller" element={<Seller />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/verify" element={<VerifyOtp />} />

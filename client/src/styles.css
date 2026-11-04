@@ -67,3 +67,5 @@ th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); }
     gap: 8px;
   }
 }
+
+.date-range { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
