@@ -342,3 +342,29 @@ describe('S3-01 seller listings retrieval API', () => {
     expect(res.body.listings).toEqual([]);
   });
 });
+
+describe('DEF-01 listing price cannot exceed MRP on create', () => {
+  it('rejects a new listing priced above the book MRP', async () => {
+    const book = await makeBook();
+
+    const res = await request(app)
+      .post('/api/v1/seller/listings')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        isbn13: book.isbn13,
+        condition: 'NEW',
+        price: 50001,
+        stock_qty: 1,
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('PRICE_ABOVE_MRP');
+
+    const listings = await Listing.find({
+      book_id: book._id,
+      seller_id: seller._id,
+    });
+
+    expect(listings).toHaveLength(0);
+  });
+});
