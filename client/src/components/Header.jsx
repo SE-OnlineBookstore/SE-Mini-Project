@@ -22,6 +22,7 @@ export default function Header() {
       <nav>
         {user ? (
           <>
+            {user.role === 'BUYER' && <Link to="/orders">Orders</Link>}
             {user.role === 'BUYER' && <Link to="/cart">Cart</Link>}
             {user.role === 'BUYER' && <Link to="/wishlist">Wishlist</Link>}
             {user.role === 'SELLER' && <Link to="/seller">Seller</Link>}

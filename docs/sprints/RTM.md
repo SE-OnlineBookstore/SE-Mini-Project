@@ -22,8 +22,8 @@ This matrix maps SRS v1.1 requirements to architecture components, design specif
 | 14 | FR-14 | Wishlist with single-action move-to-cart | Cart & Order Service | SAD 3.4, 5.3 | `server/services/wishlistService.js` | TC-O-02 | STC-07 | PASS | Pramod |
 | 15 | FR-15 | Checkout with address validation and optional coupon | Cart & Order Service | SAD 3.4, 5.3 | `server/services/checkoutService.js`, `orderService.js` | TC-O-03 | STC-08 | PASS | Pramod |
 | 16 | FR-16 | Online payment sandbox, retry limit & signed HMAC webhook | Cart & Order Service | SAD 3.4, 4.2.2 | `server/services/paymentService.js`, `client/src/pages/OrderDetail.jsx` | TC-O-04 | STC-08 | PASS | Pramod |
-| 17 | **FR-17** | **PDF invoice on confirmation, downloadable and e-mailed** | **Cart & Order Service, Notification** | **SAD 3.4, 3.8, 5.3** | `server/services/invoiceService.js`, `server/routes/order.routes.js`, `client/src/pages/OrderDetail.jsx`, `server/services/paymentService.js` | **TC-O-05** | **STC-09** | **CLOSED (PASS)** | **Pramod** |
-| 18 | **FR-18** | **Order tracking, cancellation and return lifecycle** | **Cart & Order Service** | **SAD 3.4, 5.3** | `server/services/orderService.js`, `server/routes/order.routes.js`, `client/src/pages/OrderDetail.jsx` | **TC-O-06** | **STC-09** | **CLOSED (PASS)** | **Pramod** |
+| 17 | **FR-17** | **PDF invoice on confirmation, downloadable and e-mailed** | **Cart & Order Service, Notification** | **SAD 3.4, 3.8, 5.3** | `server/services/invoiceService.js`, `server/routes/order.routes.js`, `client/src/pages/OrderDetail.jsx`, `client/src/pages/Orders.jsx`, `server/services/paymentService.js` | **TC-O-05** | **STC-09** | **CLOSED (PASS)** | **Pramod** |
+| 18 | **FR-18** | **Order tracking, cancellation and return lifecycle** | **Cart & Order Service** | **SAD 3.4, 5.3** | `server/services/orderService.js`, `server/routes/order.routes.js`, `client/src/pages/OrderDetail.jsx`, `client/src/pages/Orders.jsx`, `server/tests/api/orders.api.test.js` | **TC-O-06** | **STC-09** | **CLOSED (PASS)** | **Pramod** |
 | 19 | FR-19 | Create listing from ISBN-13 with catalogue auto-fill | Seller & Admin Service | SAD 3.4, 4.3 | `server/routes/listing.routes.js`, `server/controllers/listingController.js`, `server/services/listingService.js`, `server/tests/api/listing.api.test.js` | TC-S-01 | STC-10 | PASS | Hardhick |
 | 20 | FR-20 | Stock and price management with low-stock alerts | Seller & Admin Service | SAD 3.4, 4.3 | `server/routes/listing.routes.js`, `server/controllers/listingController.js`, `server/services/listingService.js`, `server/tests/api/listing.api.test.js` | TC-S-02 | STC-10 | PASS | Hardhick |
 | 21 | FR-21 | Order fulfilment, packaging, courier dispatch and delivery confirmation | Seller & Admin Service / Orders | SAD 3.4, 4.3 | `server/routes/fulfilment.routes.js`, `server/routes/sellerDashboard.routes.js`, `server/controllers/fulfilmentController.js`, `server/controllers/orderController.js`, `server/services/fulfilmentService.js`, `server/services/orderService.js`, `server/tests/api/sellerOrders.api.test.js` | TC-S-03 | STC-11 | PASS | Hardhick / Pramod |
@@ -152,3 +152,21 @@ This matrix maps SRS v1.1 requirements to architecture components, design specif
   - Unauthenticated requests are rejected with HTTP 401.
   - Buyer and administrator requests are rejected with HTTP 403.
   - Sellers with no order items receive an empty list.
+
+---
+
+### Verification Summary for S3-09 (My Orders Page)
+
+- **Status:** PASS
+- **Frontend Component:** `client/src/pages/Orders.jsx`
+- **Navigation:** Added Orders link for buyers in `client/src/components/Header.jsx`
+- **Route:** Added `/orders` and `/my-orders` in `client/src/App.jsx`
+- **API Tests:** `server/tests/api/orders.api.test.js`
+- **Acceptance Criteria Verification:**
+  - A buyer sees all their own orders listed newest first.
+  - Each order item displays order number, order date, total amount, status badge, and destination city.
+  - Order numbers and action buttons directly link to `/orders/:id` for detailed lifecycle tracking, cancellation, returns, and invoice download.
+  - Other users' orders are strictly isolated and never exposed.
+  - Unauthenticated visitors are prompted to sign in with a direct login link.
+  - Non-buyer accounts receive an appropriate notification indicating order history is restricted to buyer accounts.
+  - Client build and server API tests pass with zero errors.
