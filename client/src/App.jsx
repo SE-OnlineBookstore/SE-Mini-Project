@@ -13,6 +13,7 @@ import OrderDetail from './pages/OrderDetail';
 import Seller from './pages/Seller';
 import Profile from './pages/Profile';
 import Admin from './pages/Admin';
+import Orders from './pages/Orders';
 
 export default function App() {
   return (
@@ -21,15 +22,17 @@ export default function App() {
       <Header />
       <div id="main">
         <Routes>
-          <Route path="/admin" element={<Admin />} />
           <Route path="/" element={<Catalogue />} />
           <Route path="/books/:id" element={<BookDetail />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/orders" element={<Orders />} />
+          <Route path="/my-orders" element={<Orders />} />
           <Route path="/orders/:id" element={<OrderDetail />} />
           <Route path="/seller" element={<Seller />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/verify" element={<VerifyOtp />} />
