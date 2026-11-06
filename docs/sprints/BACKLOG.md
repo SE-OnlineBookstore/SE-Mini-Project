@@ -8,6 +8,7 @@ Story points use the Fibonacci scale (1, 2, 3, 5, 8). Owners follow the product-
 | Dry run | 12-16 Oct 2026 | Practice: each member moves one Sprint 1 item through To do → In progress → Done with a branch and pull request |
 | Sprint 1 | 19-23 Oct 2026 | Working product: register/login, catalogue and search, cart → checkout → sandbox payment, seller listings and dispatch |
 | Sprint 2 | 26-30 Oct 2026 | Remaining features, NFR verification, documentation complete, development frozen |
+| Sprint 3 | 2-6 Nov 2026 | Seller and admin pages, review form, My orders and profile pages, Part 3 testing and reports |
 
 ## Backlog
 
@@ -46,15 +47,30 @@ Story points use the Fibonacci scale (1, 2, 3, 5, 8). Owners follow the product-
 | NFR-07 | Cross-browser support | Deeptha | Low | 2 | 2 |
 | NFR-08 | Append-only audit log | Koushik | High | 3 | 2 |
 
+## Sprint 3 items (2-6 Nov 2026)
+
+| ID | Item | Owner | Priority | Points | Sprint |
+|---|---|---|---|---|---|
+| S3-01 | Seller listings API | Hardhick | High | 2 | 3 |
+| S3-02 | Seller orders API | Pramod | High | 2 | 3 |
+| S3-03 | Seller page (listings, fulfilment, dashboard) | Deeptha | High | 5 | 3 |
+| S3-04 | Admin page (moderation and analytics export) | Koushik | Medium | 3 | 3 |
+| S3-05 | Review form on the book page | Hardhick | Medium | 2 | 3 |
+| S3-06 | Update the Test Case Document | Deeptha | High | 2 | 3 |
+| S3-07 | Test reports (unit, system validation, code coverage, branch coverage) | Deeptha | High | 3 | 3 |
+| S3-08 | Mark order items delivered | Hardhick | Medium | 2 | 3 |
+| S3-09 | My orders page | Pramod | Medium | 2 | 3 |
+| S3-10 | Profile and address book page | Koushik | Medium | 2 | 3 |
+
 ## Points per member
 
-| Member | Sprint 1 | Sprint 2 | Total |
-|---|---|---|---|
-| Chenchu Sreekrishna Koushik | 15 | 9 | 24 |
-| Deeptha S | 16 | 10 | 26 |
-| G H Pramod | 18 | 13 | 31 |
-| Hardhick M Gowda | 15 | 13 | 28 |
-| **Team** | **64** | **45** | **109** |
+| Member | Sprint 1 | Sprint 2 | Sprint 3 | Total |
+|---|---|---|---|---|
+| Chenchu Sreekrishna Koushik | 15 | 9 | 5 | 29 |
+| Deeptha S | 16 | 10 | 10 | 36 |
+| G H Pramod | 18 | 13 | 4 | 35 |
+| Hardhick M Gowda | 15 | 13 | 6 | 34 |
+| **Team** | **64** | **45** | **25** | **134** |
 
 ## Project views to add (in the GitHub Project, 2 minutes)
 
