@@ -152,6 +152,7 @@ Sprint 2 ran from 26 to 30 October 2026. The implementation and verification wor
 | Sprint 1 demo | `docs/videos/sprint1_demo.mp4` |
 | Sprint 2 demo - Part 1 | `docs/videos/PART1_PROJ.mp4` |
 | Sprint 2 demo - Part 2 | `docs/videos/PART2_PROJ.mp4` |
+| Sprint 2 demo (2 min, re-recorded) | `docs/videos/sprint2_demo.mp4` |
 | Overall burn-up chart screenshot | `docs/sprints/evidence/burnup-overall.png` |
 | Sprint 2 burn-up chart screenshot | `docs/sprints/evidence/burnup-sprint2.png` |
 
