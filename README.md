@@ -19,6 +19,9 @@ A multi-seller e-commerce platform for buying and selling books, built on the ME
 | API contract (Sprint 1 endpoints) | `docs/api/openapi.yaml` |
 | Product backlog and sprint plan (GitHub Project) | `docs/sprints/BACKLOG.md`, `docs/sprints/create_backlog.sh` |
 | Manual test cases | `docs/testing/manual-cases.md` |
+| Test Case Document (v1.1) | `docs/testing/Test_Case_Document_v1.1.docx` |
+| Test reports (unit, system validation, code coverage, branch coverage) | `docs/testing/reports/` |
+| Test execution logs, results and screenshots | `docs/testing/deeptha_execution_log.csv`, `docs/testing/koushik_results.md`, `docs/testing/evidence/` |
 
 The backlog lives in the GitHub Project linked to this repository: one issue per requirement (FR-01 to FR-24, NFR-01 to NFR-08) with story points, owner and sprint. `docs/sprints/create_backlog.sh` creates it; `docs/sprints/BACKLOG.md` lists it.
 
