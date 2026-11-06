@@ -13,9 +13,9 @@ A multi-seller e-commerce platform for buying and selling books, built on the ME
 
 | Document | Files |
 |---|---|
-| Software Requirements Specification v1.1 | `SRS_Document.pdf` |
-| Software Architecture and Design Specification v1.0 | `SAD_pdf.pdf`, `SAD_doc.docx` |
-| Software Test Plan v1.0 (32 functional and non-functional test cases + 10 security test cases) | `Test_Plan_pdf.pdf`, `Test_Plan_doc.docx` |
+| Software Requirements Specification v1.1 | `DOCUMENTS/SRS_Document.pdf` |
+| Software Architecture and Design Specification v1.0 | `DOCUMENTS/SAD_pdf.pdf` |
+| Software Test Plan v1.0 (32 functional and non-functional test cases + 10 security test cases) | `DOCUMENTS/Test_Plan_pdf.pdf`, `DOCUMENTS/Test_Plan_v1.1.pdf` (updated in Part 3) |
 | API contract (Sprint 1 endpoints) | `docs/api/openapi.yaml` |
 | Product backlog and sprint plan (GitHub Project) | `docs/sprints/BACKLOG.md`, `docs/sprints/create_backlog.sh` |
 | Manual test cases | `docs/testing/manual-cases.md` |
@@ -29,6 +29,7 @@ The backlog lives in the GitHub Project linked to this repository: one issue per
 |---|---|
 | Sprint 1 | 19-23 Oct 2026 |
 | Sprint 2 | 26-30 Oct 2026 |
+| Sprint 3 | 2-6 Nov 2026 |
 
 ## Running locally
 
