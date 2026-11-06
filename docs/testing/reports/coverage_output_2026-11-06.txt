@@ -1,0 +1,81 @@
+
+> online-bookstore-server@1.0.0 test:coverage
+> jest --runInBand --coverage
+
+PASS tests/api/orders.api.test.js (7.572 s)
+PASS tests/api/catalogue.api.test.js (12.559 s)
+PASS tests/api/checkout.api.test.js (12.459 s)
+PASS tests/api/fulfilment.api.test.js (13.784 s)
+PASS tests/api/payment.api.test.js (27.249 s)
+PASS tests/api/auth.api.test.js (23.346 s)
+PASS tests/unit/userService.test.js (14.944 s)
+PASS tests/api/cart.api.test.js (16.931 s)
+PASS tests/api/wishlist.api.test.js (11.149 s)
+PASS tests/api/listing.api.test.js (9.982 s)
+PASS tests/api/sellerOrders.api.test.js (7.835 s)
+PASS tests/api/moderation.api.test.js (20.675 s)
+PASS tests/api/invoice.api.test.js (18.176 s)
+PASS tests/api/review.api.test.js (18.295 s)
+PASS tests/unit/auditService.test.js (6.258 s)
+PASS tests/api/user.api.test.js (12.881 s)
+PASS tests/api/analytics.api.test.js (10.703 s)
+PASS tests/api/sellerDashboard.api.test.js
+PASS tests/unit/invoiceService.test.js
+PASS tests/api/orderTracking.api.test.js (10.887 s)
+PASS tests/unit/orderTracking.test.js
+PASS tests/api/app.nodb.test.js
+PASS tests/unit/middleware.test.js
+PASS tests/unit/checkoutUsability.test.js
+PASS tests/unit/searchPipeline.test.js
+PASS tests/unit/tokenService.test.js
+PASS tests/unit/sellerDashboardService.test.js
+PASS tests/unit/paymentSchema.test.js
+PASS tests/unit/authSchema.test.js
+PASS tests/unit/checkoutSchema.test.js
+PASS tests/unit/wishlistSchema.test.js
+PASS tests/unit/analyticsService.test.js
+PASS tests/unit/isbn.test.js
+----------------------------|---------|----------|---------|---------|-----------------------------------------------------------------------
+File                        | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                                                     
+----------------------------|---------|----------|---------|---------|-----------------------------------------------------------------------
+All files                   |   88.81 |    74.56 |   90.67 |    90.1 |                                                                       
+ middleware                 |   95.23 |    85.45 |     100 |   94.59 |                                                                       
+  authorizeRoles.js         |     100 |      100 |     100 |     100 |                                                                       
+  errorHandler.js           |   81.81 |       80 |     100 |   80.95 | 11,15,17,24                                                           
+  rateLimit.js              |     100 |    66.66 |     100 |     100 | 23                                                                    
+  requestId.js              |     100 |       50 |     100 |     100 | 6                                                                     
+  validate.js               |     100 |       90 |     100 |     100 | 11                                                                    
+  verifyJWT.js              |     100 |      100 |     100 |     100 |                                                                       
+ services                   |   88.61 |    73.71 |   91.19 |   89.94 |                                                                       
+  analyticsService.js       |     100 |      100 |     100 |     100 |                                                                       
+  auditService.js           |     100 |      100 |     100 |     100 |                                                                       
+  authService.js            |   93.33 |    82.14 |     100 |   96.96 | 63-64                                                                 
+  cartService.js            |   79.71 |    66.66 |   83.33 |   80.88 | 77,85,94,98,102-103,120,125,129,146,154-156                           
+  catalogueService.js       |   90.82 |    75.94 |   89.47 |    95.4 | 72,143,164-165                                                        
+  checkoutService.js        |   88.97 |     70.4 |     100 |   92.85 | 50,73,87,98-99,112,175,214,222                                        
+  fulfilmentService.js      |   96.29 |    84.44 |     100 |   96.22 | 35,75                                                                 
+  invoiceService.js         |   95.42 |    69.23 |   88.88 |      96 | 229,258,263-264,295-296                                               
+  listingService.js         |   89.09 |    79.06 |     100 |   89.09 | 15,38,67,87,113,158                                                   
+  moderationService.js      |    91.3 |       75 |     100 |    91.3 | 28,35,42,49                                                           
+  notificationService.js    |   92.85 |       80 |     100 |   92.85 | 140-145                                                               
+  orderService.js           |   68.22 |    61.15 |   57.14 |   69.18 | 19-25,31,40,47,57,61,65,94,99,103,107,112-113,161-284,361,372,427,477 
+  otpService.js             |     100 |     90.9 |     100 |     100 | 15,30                                                                 
+  paymentService.js         |   88.61 |    69.69 |     100 |   89.83 | 93,98,133,179,194-197,227,237,242,261                                 
+  reviewService.js          |    90.9 |    85.71 |     100 |   92.59 | 45-46                                                                 
+  sellerDashboardService.js |     100 |      100 |     100 |     100 |                                                                       
+  tokenService.js           |   96.96 |    85.71 |     100 |     100 | 34,56                                                                 
+  userService.js            |     100 |    95.45 |     100 |     100 | 70                                                                    
+  wishlistService.js        |   86.36 |    68.18 |   85.71 |    87.5 | 67,74,96,114,133,136,176,186                                          
+ utils                      |   82.97 |    78.94 |    82.6 |   86.84 |                                                                       
+  AppError.js               |   93.75 |       70 |    90.9 |   93.75 | 21                                                                    
+  asyncHandler.js           |     100 |      100 |     100 |     100 |                                                                       
+  crypto.js                 |     100 |    66.66 |     100 |     100 | 4                                                                     
+  isbn.js                   |     100 |      100 |     100 |     100 |                                                                       
+  money.js                  |       0 |      100 |       0 |       0 | 2-6                                                                   
+----------------------------|---------|----------|---------|---------|-----------------------------------------------------------------------
+
+Test Suites: 33 passed, 33 total
+Tests:       256 passed, 256 total
+Snapshots:   0 total
+Time:        270.936 s
+Ran all test suites.
