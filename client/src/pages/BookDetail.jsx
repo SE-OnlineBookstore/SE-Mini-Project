@@ -125,7 +125,7 @@ export default function BookDetail() {
 
       <h2>Offers</h2>
       {offers.length === 0 ? <p>No seller currently has this title in stock.</p> : (
-        <table>
+        <table className="offers-table">
           <thead>
             <tr>
               <th>Condition</th>
@@ -143,12 +143,12 @@ export default function BookDetail() {
 
               return (
                 <tr key={o.listingId}>
-                  <td>{o.condition.replace('_', ' ').toLowerCase()}</td>
-                  <td>{rupees(o.price)}</td>
-                  <td>{o.seller.name}</td>
-                  <td>{o.inStock ? `${o.stockQty} in stock` : 'Out of stock'}</td>
-                  <td style={{ textAlign: 'right' }}>
-                    <div style={{ display: 'inline-flex', gap: '8px', alignItems: 'center' }}>
+                  <td data-label="Condition">{o.condition.replace('_', ' ').toLowerCase()}</td>
+                  <td data-label="Price">{rupees(o.price)}</td>
+                  <td data-label="Seller">{o.seller.name}</td>
+                  <td data-label="Availability">{o.inStock ? `${o.stockQty} in stock` : 'Out of stock'}</td>
+                  <td data-label="Actions" className="offer-actions-cell">
+                    <div className="offer-actions">
                       <button
                         type="button"
                         onClick={() => handleAddToCart(o.listingId)}

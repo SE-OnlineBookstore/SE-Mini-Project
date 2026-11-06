@@ -68,4 +68,81 @@ th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); }
   }
 }
 
+.offer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
 .date-range { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+
+
+/* DEF-02: Make book offers fit mobile screens without horizontal scrolling */
+.offers-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+@media (max-width: 600px) {
+  .page table.offers-table {
+    display: block;
+    overflow-x: visible;
+    max-width: 100%;
+  }
+
+  .offers-table thead {
+    display: none;
+  }
+
+  .offers-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .offers-table tbody tr {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .offers-table tbody td {
+    display: block;
+    min-width: 0;
+    padding: 4px;
+    border: none;
+    overflow-wrap: anywhere;
+  }
+
+  .offers-table tbody td::before {
+    content: attr(data-label);
+    display: block;
+    font-weight: bold;
+    font-size: 0.8rem;
+    margin-bottom: 5px;
+    color: var(--muted);
+  }
+
+  .offers-table .offer-actions-cell {
+    grid-column: 1 / -1;
+  }
+
+  .offers-table .offer-actions-cell::before {
+    display: none;
+  }
+
+  .offers-table .offer-actions {
+    display: flex;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .offers-table .offer-actions button {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+  }
+}
