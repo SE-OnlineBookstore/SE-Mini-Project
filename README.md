@@ -9,7 +9,7 @@ A multi-seller e-commerce platform for buying and selling books, built on the ME
 | G H Pramod | PES1UG24CS162 | Cart, checkout, payment and orders (FR-13 to FR-18) |
 | Hardhick M Gowda | PES1UG24CS179 | Seller operations, administration and reporting (FR-19 to FR-24) |
 
-## Part-1 documents
+## Documents, reports and evidence
 
 | Document | Files |
 |---|---|
@@ -95,19 +95,19 @@ server/
   middleware/       verifyJWT, authorizeRoles, validate, rateLimit, requestId, errorHandler
   routes/           auth, users, books, health, cart, orders, seller and admin
   controllers/      thin HTTP layer
-  services/         business rules: auth, catalogue, cart, orders, payment, invoice, reviews, seller, analytics and audit
+  services/         business rules: auth, OTP, tokens, users, catalogue, cart, wishlist, checkout, payment, orders, fulfilment, invoice, reviews, listings, seller dashboard, moderation, analytics, notifications and audit
   models/           all 17 collections from SRS v1.1 Appendix B
   adapters/         mailer (SMTP or stub), cache (Redis or in-memory)
   validators/       Joi schemas (unknown fields rejected)
   scripts/seed.js   deterministic seed data
-  tests/            unit/ and api/
+  tests/            unit/ (15 suites) and api/ (18 suites)
 client/
   src/api/client.js Axios client with silent token refresh
-  src/pages/        Catalogue, BookDetail, authentication, cart, checkout and order-related screens
+  src/pages/        Catalogue, BookDetail, authentication, cart, wishlist, checkout, orders, profile, seller and admin screens
 docs/
   api/              OpenAPI specification
   sprints/          Backlog, RTM, sprint deviations and verification evidence
-  testing/          Manual test cases
+  testing/          Manual cases, Test Case Document, execution logs, reports and screenshots
 ```
 
 ## Sprint 1 status
@@ -158,6 +158,54 @@ Sprint 2 ran from 26 to 30 October 2026. The implementation and verification wor
 | Sprint 2 burn-up chart screenshot | `docs/sprints/evidence/burnup-sprint2.png` |
 
 The RTM records each requirement's current verification status. Refer to the linked evidence before interpreting a requirement as passed.
+
+## Sprint 3 status and deliverables
+
+Sprint 3 ran from 2 to 6 November 2026 (25 story points; the project total is 134). It completed the user interface for sellers, administrators and buyers, and carried out the Part-3 testing.
+
+### What was built
+
+| ID | Item | Owner | Points |
+|---|---|---|---|
+| S3-01 | Seller listings API | Hardhick | 2 |
+| S3-02 | Seller orders API | Pramod | 2 |
+| S3-03 | Seller page (listings, fulfilment, dashboard) | Deeptha | 5 |
+| S3-04 | Admin page (moderation and analytics export) | Koushik | 3 |
+| S3-05 | Review form on the book page | Hardhick | 2 |
+| S3-06 | Update the Test Case Document | Deeptha | 2 |
+| S3-07 | Test reports (unit, system validation, code coverage, branch coverage) | Deeptha | 3 |
+| S3-08 | Mark order items delivered | Hardhick | 2 |
+| S3-09 | My orders page | Pramod | 2 |
+| S3-10 | Profile and address book page | Koushik | 2 |
+
+S3-08, S3-09 and S3-10 were added during the sprint, which took Sprint 3 from 19 to 25 points (see `docs/sprints/SPRINT_3_DEVIATIONS.md`).
+
+### Functional requirements now available in the interface
+
+- Buyers: catalogue, search, filters, book detail with all seller offers, reviews (form on the book page), cart, wishlist, checkout with coupon, sandbox payment, My orders with tracking, cancellation, returns and invoice, profile and address book
+- Sellers: listings, stock and price management, order fulfilment, mark items delivered, sales dashboard
+- Administrators: moderation queue and monthly analytics export (CSV and PDF)
+
+### Test results
+
+- Automated tests: 33 suites, 256 tests, all passing (15 unit and 18 API suites)
+- Coverage across all files: 88.81 per cent statements, 74.56 per cent branches, 90.67 per cent functions, 90.10 per cent lines
+- Services: 88.61 per cent statements, which meets the 70 per cent gate (NFR-06); `orderService.js` is individually at 68.22 per cent and is a known gap
+- System test cases TC-01 to TC-16: all Pass (TC-08, TC-09 and TC-15 executed by Koushik; the rest by Deeptha)
+- Defects found and fixed: DEF-01 (price above MRP accepted on listing create, PR #87) and DEF-02 (Add to cart and Wishlist off-screen at 360 px, PR #91); both retested
+- The client has no automated tests; it is covered by system validation
+
+### Sprint 3 documents and evidence
+
+| Deliverable | Location |
+|---|---|
+| Test Case Document v1.1 | `docs/testing/Test_Case_Document_v1.1.pdf` |
+| Unit, system validation, code coverage and branch coverage reports | `docs/testing/reports/` |
+| Raw coverage output | `docs/testing/reports/coverage_output_2026-11-05.txt`, `docs/testing/reports/coverage_output_2026-11-06.txt` |
+| Execution logs and results | `docs/testing/deeptha_execution_log.csv`, `docs/testing/koushik_results.md` |
+| Screenshots | `docs/testing/evidence/` |
+| Updated SRS v1.2, SAD v1.1 and Test Plan v1.1 | `DOCUMENTS/` |
+| Sprint 3 deviations and as-built differences | `docs/sprints/SPRINT_3_DEVIATIONS.md`, SRS Appendix E, SAD section 5.5 |
 
 ## Branching
 
