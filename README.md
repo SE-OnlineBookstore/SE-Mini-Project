@@ -159,10 +159,6 @@ Sprint 2 ran from 26 to 30 October 2026. The implementation and verification wor
 
 The RTM records each requirement's current verification status. Refer to the linked evidence before interpreting a requirement as passed.
 
-### Deployment
-
-Staging application: https://se-mini-project-s3v8.onrender.com
-
 ## Branching
 
 Work on `feature/FR-xx-short-name`, open a pull request whose description says `Closes #<issue number>`, get a review from another owner, then merge into `main`. The issue moves to Done on the board automatically.
