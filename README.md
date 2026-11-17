@@ -19,7 +19,7 @@ A multi-seller e-commerce platform for buying and selling books, built on the ME
 | API contract (Sprint 1 endpoints) | `docs/api/openapi.yaml` |
 | Product backlog and sprint plan (GitHub Project) | `docs/sprints/BACKLOG.md`, `docs/sprints/create_backlog.sh` |
 | Manual test cases | `docs/testing/manual-cases.md` |
-| Test Case Document (v1.1) | `docs/testing/Test_Case_Document_v1.1.docx` |
+| Test Case Document (v1.1) | `docs/testing/Test_Case_Document_v1.1.pdf` |
 | Test reports (unit, system validation, code coverage, branch coverage) | `docs/testing/reports/` |
 | Test execution logs, results and screenshots | `docs/testing/deeptha_execution_log.csv`, `docs/testing/koushik_results.md`, `docs/testing/evidence/` |
 
@@ -86,9 +86,9 @@ Each run uses a throwaway database name. Test names start with the Test Plan IDs
 ## Repository layout
 
 ```text
-SRS_Document.pdf                Software Requirements Specification
-SAD_pdf.pdf, SAD_doc.docx       Software Architecture and Design Specification
-Test_Plan_pdf.pdf, Test_Plan_doc.docx  Software Test Plan
+DOCUMENTS/SRS_Document.pdf, SRS_Document_v1.2.pdf  Software Requirements Specification
+DOCUMENTS/SAD_pdf.pdf, SAD_v1.1.pdf  Software Architecture and Design Specification
+DOCUMENTS/Test_Plan_pdf.pdf, Test_Plan_v1.1.pdf  Software Test Plan
 server/
   app.js            API Gateway Layer: middleware order (helmet, CORS, rate limit, sanitise, routes, errors)
   config/           env validation, MongoDB connection, logger with redaction
