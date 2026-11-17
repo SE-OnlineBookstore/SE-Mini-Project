@@ -13,8 +13,8 @@ A multi-seller e-commerce platform for buying and selling books, built on the ME
 
 | Document | Files |
 |---|---|
-| Software Requirements Specification v1.1 | `DOCUMENTS/SRS_Document.pdf` |
-| Software Architecture and Design Specification v1.0 | `DOCUMENTS/SAD_pdf.pdf` |
+| Software Requirements Specification v1.1 (v1.2 updated after Sprint 3) | `DOCUMENTS/SRS_Document.pdf`, `DOCUMENTS/SRS_Document_v1.2.pdf` |
+| Software Architecture and Design Specification v1.0 (v1.1 updated after Sprint 3) | `DOCUMENTS/SAD_pdf.pdf`, `DOCUMENTS/SAD_v1.1.pdf` |
 | Software Test Plan v1.0 (32 functional and non-functional test cases + 10 security test cases) | `DOCUMENTS/Test_Plan_pdf.pdf`, `DOCUMENTS/Test_Plan_v1.1.pdf` (updated in Part 3) |
 | API contract (Sprint 1 endpoints) | `docs/api/openapi.yaml` |
 | Product backlog and sprint plan (GitHub Project) | `docs/sprints/BACKLOG.md`, `docs/sprints/create_backlog.sh` |
